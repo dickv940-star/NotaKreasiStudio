@@ -217,7 +217,11 @@ display:none;
     padding:5px 20px;
     border-radius:10px;
 }
-    
+ #nota{
+    outline:none;
+    padding:2px 5px;
+    border-bottom:1px dashed #999;
+}   
 </style>
 
 </head>
@@ -277,7 +281,7 @@ Selesai Tgl :
 <h2>
 
 NO :
-<span id="nota"></span>
+<span id="nota" contenteditable="true"></span>
 
 </h2>
 
@@ -452,6 +456,8 @@ Reset
 Install App
 </button>
 
+<button onclick="setNotaBaru()">Transaksi Baru</button>
+    
 <button onclick="toggleEdit()">Edit Teks</button>
 
 <div id="toolbarEdit" style="display:none;text-align:center;margin:10px;">
@@ -471,9 +477,6 @@ Install App
 
 <script>
     
-let lastNota = localStorage.getItem("lastNota");
-lastNota = lastNota ? parseInt(lastNota) : 0;
-    
 const tanggal = document.getElementById("tanggal");
 const nota = document.getElementById("nota");
 const total = document.getElementById("total");
@@ -491,27 +494,6 @@ String(v)
 .replace(/\./g,'')
 .replace(/[^0-9]/g,'')
 ) || 0;
-}
-
-
-// NOMOR NOTA
-function buatNomor(){
-
-lastNota = lastNota + 1;
-
-// simpan ke localStorage
-localStorage.setItem("lastNota", lastNota);
-
-// format jadi 4 digit
-return String(lastNota).padStart(4, "0");
-
-}
-    
-function updateNota(){
-
-let nomor = buatNomor();
-nota.innerText = nomor;
-
 }
 
 // init tanggal
@@ -634,9 +616,7 @@ alert("Install belum tersedia");
 }
 
 
-// =====================
 // EDIT MODE TOOLBAR
-// =====================
 
 function toggleEdit(){
 
@@ -651,15 +631,36 @@ if(document.designMode === "on"){
 }
 
 }
+let lastNota = Number(localStorage.getItem("lastNota")) || 0;
 
+const nota = document.getElementById("nota");
+
+// BUAT NOMOR BARU
+function buatNomor() {
+    lastNota++;
+    localStorage.setItem("lastNota", lastNota);
+    return String(lastNota).padStart(4, "0");
+}
+
+// TAMPILKAN NOMOR
+function setNotaBaru() {
+    if (!nota) return;
+    nota.innerText = buatNomor();
+}
+
+// EDIT MANUAL
+nota?.addEventListener("blur", () => {
+    let manual = parseInt(nota.innerText.replace(/\D/g, ""));
+    if (!isNaN(manual)) {
+        lastNota = manual;
+        localStorage.setItem("lastNota", lastNota);
+    }
+});
+    
 // FORMAT TEKS
 function cmd(command){
 document.execCommand(command,false,null);
 }
-    
-window.addEventListener("load", () => {
-updateNota();
-});
 
 // SERVICE WORKER
 if("serviceWorker" in navigator){
