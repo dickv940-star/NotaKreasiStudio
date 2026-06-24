@@ -427,11 +427,7 @@ Terima Kasih Sudah Berbelanja Di Toko Kami
 </div>
 
 
-
 </div>
-
-
-
 
 
 <div class="buttons">
@@ -456,33 +452,27 @@ Reset
 Install App
 </button>
 
-<div style="text-align:center;margin-top:10px;">
+<button onclick="toggleEdit()">Edit Teks</button>
 
+<div id="toolbarEdit" style="display:none;text-align:center;margin:10px;">
+      
 <button onclick="cmd('bold')"><b>B</b></button>
-
 <button onclick="cmd('italic')"><i>I</i></button>
 
 <button onclick="cmd('justifyLeft')">⬅</button>
-
 <button onclick="cmd('justifyCenter')">⬤</button>
-
 <button onclick="cmd('justifyRight')">➡</button>
 
 </div>
-
-
-
-</div>
-
-
-
-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 
 
 <script>
+    
+let lastNota = localStorage.getItem("lastNota");
+lastNota = lastNota ? parseInt(lastNota) : 0;
     
 const tanggal = document.getElementById("tanggal");
 const nota = document.getElementById("nota");
@@ -504,25 +494,25 @@ String(v)
 }
 
 
-// =====================
 // NOMOR NOTA
-// =====================
-
 function buatNomor(){
-let t = tanggal.value;
-if(!t) return "000000";
 
-let d = t.split("-");
-return d[2] + d[1] + d[0].slice(2);
+lastNota = lastNota + 1;
+
+// simpan ke localStorage
+localStorage.setItem("lastNota", lastNota);
+
+// format jadi 4 digit
+return String(lastNota).padStart(4, "0");
+
 }
-
+    
 function updateNota(){
+
 let nomor = buatNomor();
 nota.innerText = nomor;
 
-localStorage.setItem("nota", nomor);
 }
-
 
 // init tanggal
 tanggal.valueAsDate = new Date();
@@ -531,9 +521,7 @@ updateNota();
 tanggal.addEventListener("change", updateNota);
 
 
-// =====================
 // INPUT FORMAT + HITUNG
-// =====================
 
 document.querySelectorAll(".qty,.harga,#dp")
 .forEach(el => {
@@ -581,8 +569,7 @@ if(totalNilai > 0 && sisaNilai <= 0){
     sisa.innerText = formatAngka(sisaNilai);
     lunasBox.style.display = "none";
 }
-function cmd(command){
-document.execCommand(command,false,null);
+
 }
     
 // =====================
@@ -607,31 +594,24 @@ a.click();
 }
 
 
-// =====================
 // RESET
-// =====================
-
 function resetNota(){
 
-document.querySelectorAll(".edit")
-.forEach(x => x.innerText = "");
-
-document.querySelectorAll(".jumlah")
-.forEach(x => x.innerText = "");
+document.querySelectorAll(".edit").forEach(x => x.innerText = "");
+document.querySelectorAll(".jumlah").forEach(x => x.innerText = "");
 
 dp.innerText = "";
 total.innerText = "0";
 sisa.innerText = "0";
 
-tanggal.valueAsDate = new Date();
-updateNota();
-
+// optional: fokus ke input pertama
+document.querySelector(".edit")?.focus();
+    
+}
+    
 }
 
-
-// =====================
 // PWA INSTALL
-// =====================
 
 let deferredPrompt;
 
@@ -639,6 +619,7 @@ window.addEventListener("beforeinstallprompt", e => {
 e.preventDefault();
 deferredPrompt = e;
 });
+
 
 function installApp(){
 
@@ -651,26 +632,36 @@ alert("Install belum tersedia");
 }
 
 }
-   
-document.addEventListener("click", function(e){
 
-let target = e.target;
 
-document.querySelectorAll("[contenteditable]")
-.forEach(el => el.removeAttribute("contenteditable"));
+// =====================
+// EDIT MODE TOOLBAR
+// =====================
 
-// aktifkan hanya yang diklik di nota
-if(
-target.closest("#notaArea") &&
-target.tagName !== "BUTTON" &&
-target.tagName !== "INPUT" &&
-target.tagName !== "TH"
-){
-    target.setAttribute("contenteditable","true");
+function toggleEdit(){
+
+let toolbar = document.getElementById("toolbarEdit");
+
+if(document.designMode === "on"){
+    document.designMode = "off";
+    toolbar.style.display = "none";
+}else{
+    document.designMode = "on";
+    toolbar.style.display = "block";
 }
 
+}
+
+// FORMAT TEKS
+function cmd(command){
+document.execCommand(command,false,null);
+}
+    
+window.addEventListener("load", () => {
+updateNota();
 });
 
+// SERVICE WORKER
 if("serviceWorker" in navigator){
 navigator.serviceWorker
 .register("sw.js")
@@ -679,4 +670,3 @@ navigator.serviceWorker
 
 </script>
 
-</body>  
