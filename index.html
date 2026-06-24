@@ -450,23 +450,21 @@ Install App
 </button>
 
 <button onclick="toggleEdit()">Edit Teks</button>
-    
+
 <div id="toolbarEdit" style="display:none;text-align:center;margin:10px;">
-      
-<button onclick="cmd('bold')"><b>B</b></button>
-<button onclick="cmd('italic')"><i>I</i></button>
-
-<button onclick="cmd('justifyLeft')">⬅</button>
-<button onclick="cmd('justifyCenter')">⬤</button>
-<button onclick="cmd('justifyRight')">➡</button>
-
- <div id="notaArea">
-     
+  <button onclick="cmd('bold')"><b>B</b></button>
+  <button onclick="cmd('italic')"><i>I</i></button>
+  <button onclick="cmd('justifyLeft')">⬅</button>
+  <button onclick="cmd('justifyCenter')">⬤</button>
+  <button onclick="cmd('justifyRight')">➡</button>
 </div>
-    
+
+<div id="notaArea" contenteditable="false"
+     style="border:1px solid #ccc; padding:10px; min-height:200px;">
+  Tulis sesuatu di sini...
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-
 
 <script>
     
@@ -612,18 +610,14 @@ alert("Install belum tersedia");
 // EDIT MODE TOOLBAR
 
 function toggleEdit() {
-    let toolbar = document.getElementById("toolbarEdit");
-    let notaArea = document.getElementById("notaArea");
+  const toolbar = document.getElementById("toolbarEdit");
+  const area = document.getElementById("notaArea");
 
-    let isOn = toolbar.style.display === "block";
+  const isHidden = toolbar.style.display === "none" || toolbar.style.display === "";
 
-    if (isOn) {
-        toolbar.style.display = "none";
-        notaArea.setAttribute("contenteditable", "false");
-    } else {
-        toolbar.style.display = "block";
-        notaArea.setAttribute("contenteditable", "true");
-    }
+  toolbar.style.display = isHidden ? "block" : "none";
+  area.contentEditable = isHidden ? "true" : "false";
+}
 
 }
 let lastNota = Number(localStorage.getItem("lastNota")) || 0;
@@ -657,6 +651,10 @@ function cmd(command){
     document.execCommand(command, false, null);
 }
 
+function cmd(command) {
+  document.execCommand(command, false, null);
+}
+    
 // SERVICE WORKER
 if("serviceWorker" in navigator){
 navigator.serviceWorker
