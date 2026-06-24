@@ -32,13 +32,23 @@ body{
 .header{
     display:flex;
     justify-content:space-between;
-    align-items:flex-start;
+    align-items:center;
+    gap:30px;
 }
 
+.logo{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    flex:1.2;   
+}
 .logo img{
-    height:80px;
+    height:180px;
+    max-width:260px;
+    width:auto;
+    object-fit:contain;
+    display:block;
 }
-
 .logo h2{
     margin:5px 0 0 0;
     color:#c40000;
