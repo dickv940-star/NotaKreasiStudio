@@ -232,29 +232,19 @@ display:none;
 
 <div class="container">
 
-
 <div id="notaArea">
 
+  <!-- HEADER WAJIB -->
+  <div class="header">
 
-
-<!-- HEADER -->
-
-<div class="header">
-
-
-<div class="logo">
-
-
-<img src="logo-512x200.png">
- 
+    <div class="logo">
+      <img src="logo-512x200.png">
+        
 <h2>Studio Foto & Make Up</h2>
-<p>  
-Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara
-</p>
+  
+ <p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
 
-<p>
-☎ 0882 1218 1283 (WA)
-</p>
+ <p>☎ 0882 1218 1283 (WA)</p>
 
 </div>
 
@@ -459,11 +449,6 @@ Install App
   <button onclick="cmd('justifyRight')">➡</button>
 </div>
 
-<div id="notaArea" contenteditable="false"
-     style="border:1px solid #ccc; padding:10px; min-height:200px;">
-  Tulis sesuatu di sini...
-</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
@@ -476,7 +461,7 @@ const sisa = document.getElementById("sisa");
 const notaArea = document.getElementById("notaArea");
 
 function formatAngka(n){
-return Number(n).toLocaleString("id-ID");
+  return new Intl.NumberFormat("id-ID").format(Number(n));
 }
 
 function angka(v){
@@ -489,9 +474,6 @@ String(v)
 
 // init tanggal
 tanggal.valueAsDate = new Date();
-updateNota();
-
-tanggal.addEventListener("change", updateNota);
 
 
 // INPUT FORMAT + HITUNG
@@ -530,7 +512,7 @@ totalNilai += jumlah;
 
 total.innerText = formatAngka(totalNilai);
 
-let bayar = angka(dp.innerText);
+let bayar = angka(dp.innerText || "0");
 let sisaNilai = totalNilai - bayar;
 
 let lunasBox = document.getElementById("lunasBox");
@@ -582,8 +564,6 @@ document.querySelector(".edit")?.focus();
     
 }
     
-}
-
 // PWA INSTALL
 
 let deferredPrompt;
@@ -603,10 +583,9 @@ deferredPrompt = null;
 else{
 alert("Install belum tersedia");
 }
-
+    
 }
-
-
+    
 // EDIT MODE TOOLBAR
 
 function toggleEdit() {
@@ -619,10 +598,7 @@ function toggleEdit() {
   area.contentEditable = isHidden ? "true" : "false";
 }
 
-}
 let lastNota = Number(localStorage.getItem("lastNota")) || 0;
-
-const nota = document.getElementById("nota");
 
 // BUAT NOMOR BARU
 function buatNomor() {
@@ -648,10 +624,6 @@ nota?.addEventListener("blur", () => {
     
 // FORMAT TEKS
 function cmd(command){
-    document.execCommand(command, false, null);
-}
-
-function cmd(command) {
   document.execCommand(command, false, null);
 }
     
