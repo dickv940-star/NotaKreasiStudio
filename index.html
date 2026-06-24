@@ -478,16 +478,16 @@ tanggal.valueAsDate = new Date();
 
 // INPUT FORMAT + HITUNG
 
+document.addEventListener("input", hitung);
+
 document.querySelectorAll(".qty,.harga,#dp")
 .forEach(el => {
 
-el.addEventListener("input", hitung);
-
-el.addEventListener("blur", () => {
-let a = angka(el.innerText);
-el.innerText = a ? formatAngka(a) : "";
-hitung();
-});
+  el.addEventListener("blur", () => {
+    let a = angka(el.innerText);
+    el.innerText = a ? formatAngka(a) : "";
+    hitung();
+  });
 
 });
 document.addEventListener("input", hitung);
