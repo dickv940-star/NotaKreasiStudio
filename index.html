@@ -31,20 +31,19 @@ body{
 
 .header{
     display:flex;
-    justify-content:flex-start; /* jangan space-between */
-    align-items:center;
+    justify-content:flex-start;
+    align-items:flex-start;
     gap:40px;
 }
     
 .logo{
     display:flex;
     flex-direction:column;
-    justify-content:center;
-    flex:1.2;   
+    align-items:flex-start; 
+    gap:5px;
 }
 .logo img{
-    height:240px;    
-    max-width:320px;
+    height:220px;
     width:auto;
     object-fit:contain;
     display:block;
@@ -55,6 +54,7 @@ body{
 .logo h2{
     margin:5px 0 0 0;
     color:#c40000;
+    font-size:18px;
 }
 
 .info{
@@ -119,10 +119,10 @@ button{
 <div class="header">
 
 <div class="logo">
-<img src="logo.png" alt="Kreasi Studio">
-<h2>Studio Foto & Make Up</h2>
-<p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
-<p>WA : 0882 1218 1283</p>
+    <img src="logo.png" alt="logo">
+    <h2>Studio Foto & Make Up</h2>
+    <p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
+    <p>WA : 0882 1218 1283</p>
 </div>
 
 <div class="info">
