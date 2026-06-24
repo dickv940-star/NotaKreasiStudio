@@ -41,38 +41,50 @@ background:white;
 
 
 .header{
-display:flex;
-justify-content:space-between;
-align-items:flex-start;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:20px;
+}
+
+
+.logo{
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
 }
 
 
 .logo img{
-width:280px;
-max-width:100%;
+    width:260px;
+    height:auto;
+    display:block;
+    margin:0 0 2px 0;
 }
-
 
 .logo p{
-margin:0;
-font-size:14px;
+    margin:1px 0;
+    font-size:13px;
+    line-height:1.2;
 }
-
-
 
 .info{
-text-align:right;
-font-size:17px;
-padding-top:5px;
+    text-align:right;
+    font-size:15px;
+    padding-top:0;
 }
 
+.info p{
+    margin:2px 0;
+}
 
-
+.info h2{
+    margin-top:12px;
+    font-size:20px;
+}
 .info input{
 padding:5px;
 }
-
-
 
 table{
 width:100%;
@@ -80,56 +92,40 @@ border-collapse:collapse;
 margin-top:15px;
 }
 
-
-
 th,td{
 border:2px solid #000;
 height:45px;
 }
-
-
 
 th{
 font-size:18px;
 }
 
 
-
 td{
 padding:5px;
 }
-
-
 
 .edit{
 outline:none;
 }
 
-
-
 .edit:focus{
 background:#fff2b8;
 }
 
-
-
 .footer{
 display:flex;
 }
-
-
 
 .warning{
 width:60%;
 padding:12px;
 }
 
-
-
 .warning h2{
 color:red;
 }
-
 
 
 .warning h3{
@@ -141,11 +137,9 @@ margin-top:20px;
 }
 
 
-
 .payment{
 width:40%;
 }
-
 
 
 .payment td{
@@ -154,16 +148,12 @@ font-size:18px;
 }
 
 
-
-
 .buttons{
 
 text-align:center;
 margin-top:20px;
 
 }
-
-
 
 button{
 
@@ -176,8 +166,6 @@ cursor:pointer;
 
 }
 
-
-
 @media print{
 
 
@@ -186,11 +174,9 @@ background:white;
 padding:0;
 }
 
-
 .container{
 padding:0;
 }
-
 
 .buttons{
 display:none;
