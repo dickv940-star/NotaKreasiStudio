@@ -39,22 +39,32 @@ body{
 .logo{
     display:flex;
     flex-direction:column;
-    align-items:flex-start; 
-    gap:5px;
+    align-items:flex-start;
+    justify-content:flex-start;
+    gap:6px;   
 }
 .logo img{
     height:220px;
     width:auto;
     object-fit:contain;
     display:block;
+    margin:0;   
 }
+ .logo img{
+    position:relative;
+    top:8px; /* turun sedikit biar balance */
+}   
 .logo img{
     filter: drop-shadow(0 6px 10px rgba(0,0,0,0.2));
 }
 .logo h2{
-    margin:5px 0 0 0;
+    margin:2px 0 0 0;  
     color:#c40000;
     font-size:18px;
+}
+
+.logo p{
+    margin:2px 0;  /* rapikan jarak antar baris */
 }
 
 .info{
