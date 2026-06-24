@@ -32,15 +32,15 @@ body{
 .header{
     display:flex;
     justify-content:space-between;
-    align-items:center; 
+    align-items:flex-start;
     gap:40px;
 }
     
-.logo,
-.info{
+..logo{
     display:flex;
-    flex-direction:column;
-    justify-content:center;
+    flex-direction:column;  
+    align-items:flex-start;
+    gap:2px;
 }
 
 .logo{
@@ -48,18 +48,27 @@ body{
 }
 
 .logo img{
-    height:260px;
+    height:240px;
     width:auto;
     display:block;
-}
-.logo h2,
-.logo p{
     margin:0;
+}
+    
+.logo h2{
+    margin:2px 0 0 0;
     line-height:1.1;
+    color:#c40000;
+    font-size:18px;
+}
+..logo p{
+    margin:1px 0;
+    line-height:1.2;
 }
 
 .info{
     text-align:right;
+    display:flex;
+    flex-direction:column;
     gap:5px;
 }
 
@@ -121,8 +130,9 @@ button{
   <div class="logo">
     <img src="logo.png">
     <h2>Studio Foto & Make Up</h2>
-    <p>Jl. Pademangan 3 Gang 22 No.5 Jakarta Utara</p>
-  </div>
+    <p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
+    <p>WA : 0882 1218 1283</p>
+</div>
   <div class="info">
     <p>Tanggal : <input type="date" id="tanggal"></p>
     <p>No Nota : <span id="nota"></span></p>
