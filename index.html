@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Kreasi Studio</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c40000">
+
+<!-- ICON TAB BROWSER -->
+<link rel="icon" type="image/png" href="icon-192.png">
+
+<style>
+body{
+    font-family:Arial, sans-serif;
+    background:#f5f5f5;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+    background:#fff;
+    padding:20px;
+    border:1px solid #ddd;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+}
+
+.logo img{
+    height:80px;
+}
+
+.logo h2{
+    margin:5px 0 0 0;
+    color:#c40000;
+}
+
+.info{
+    text-align:right;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    table-layout:auto;
+}
+
+table, th, td{
+    border:1px solid #000;
+}
+
+th, td{
+    padding:8px;
+    vertical-align:top;
+}
+
+.editable{
+    min-height:20px;
+    outline:none;
+    word-break:break-word;
+}
+
+.editable:focus{
+    background:#fff3cd;
+}
+
+.total{
+    margin-top:20px;
+    text-align:right;
+}
+
+button{
+    background:#c40000;
+    color:white;
+    border:none;
+    padding:10px 20px;
+    cursor:pointer;
+    margin:5px;
+}
+
+@media print{
+    button{
+        display:none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="notaArea">
+
+<!-- HEADER -->
+<div class="header">
+
+<div class="logo">
+<img src="logo.png" alt="Kreasi Studio">
+<h2>Studio Foto & Make Up</h2>
+<p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
+<p>WA : 0882 1218 1283</p>
+</div>
+
+<div class="info">
+<p>Tanggal : <input type="date" id="tanggal"></p>
+<p>No Nota : <span id="nota"></span></p>
+</div>
+
+</div>
+
+<!-- TABLE -->
+<table>
+<thead>
+<tr>
+<th>KETERANGAN</th>
+<th>BANYAK</th>
+<th>HARGA</th>
+<th>JUMLAH</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+<td contenteditable="true" class="ket"></td>
+<td contenteditable="true" class="qty"></td>
+<td contenteditable="true" class="harga"></td>
+<td class="subtotal"></td>
+</tr>
+
+<tr>
+<td contenteditable="true" class="ket"></td>
+<td contenteditable="true" class="qty"></td>
+<td contenteditable="true" class="harga"></td>
+<td class="subtotal"></td>
+</tr>
+
+<tr>
+<td contenteditable="true" class="ket"></td>
+<td contenteditable="true" class="qty"></td>
+<td contenteditable="true" class="harga"></td>
+<td class="subtotal"></td>
+</tr>
+
+<tr>
+<td contenteditable="true" class="ket"></td>
+<td contenteditable="true" class="qty"></td>
+<td contenteditable="true" class="harga"></td>
+<td class="subtotal"></td>
+</tr>
+
+<tr>
+<td contenteditable="true" class="ket"></td>
+<td contenteditable="true" class="qty"></td>
+<td contenteditable="true" class="harga"></td>
+<td class="subtotal"></td>
+</tr>
+
+</tbody>
+</table>
+
+<!-- TOTAL -->
+<div class="total">
+<h3>Total : Rp <span id="total">0</span></h3>
+
+<button onclick="window.print()">Cetak Nota</button>
+<button onclick="downloadJPG()">Download JPG</button>
+<button onclick="resetNota()">Reset</button>
+<button onclick="installApp()">Install App</button>
+</div>
+
+</div>
+
+<!-- LIB -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+
+// ================= FORMAT RUPIAH =================
+function formatRupiah(angka){
+return new Intl.NumberFormat("id-ID").format(angka);
+}
+
+// ================= NO NOTA =================
+let no = localStorage.getItem("nota") || 1;
+
+function updateNota(){
+document.getElementById("nota").textContent = String(no).padStart(4,"0");
+localStorage.setItem("nota", no);
+}
+
+updateNota();
+no++;
+
+// ================= TANGGAL =================
+document.getElementById("tanggal").valueAsDate = new Date();
+
+// ================= KONVERSI ANGKA =================
+function toNumber(val){
+let num = parseFloat((val || "").toString().replace(/[^0-9]/g,''));
+return isNaN(num) ? 0 : num;
+}
+
+// ================= INPUT EVENT =================
+document.querySelectorAll(".qty, .harga").forEach(el=>{
+el.addEventListener("blur", function(){
+let val = this.innerText.replace(/[^0-9]/g,'');
+if(val){
+this.innerText = formatRupiah(val);
+}
+hitung();
+});
+});
+
+// ================= HITUNG TOTAL =================
+function hitung(){
+let rows = document.querySelectorAll("tbody tr");
+let total = 0;
+
+rows.forEach(row=>{
+let qty = toNumber(row.querySelector(".qty").innerText);
+let harga = toNumber(row.querySelector(".harga").innerText);
+
+let subtotal = qty * harga;
+
+row.querySelector(".subtotal").innerText =
+subtotal ? formatRupiah(subtotal) : "";
+
+total += subtotal;
+});
+
+document.getElementById("total").innerText = formatRupiah(total);
+}
+
+// ================= DOWNLOAD JPG =================
+function downloadJPG(){
+const el = document.getElementById("notaArea");
+
+html2canvas(el,{
+scale:2,
+useCORS:true
+}).then(canvas=>{
+let a = document.createElement("a");
+a.download = "nota.jpg";
+a.href = canvas.toDataURL("image/jpeg",1.0);
+a.click();
+});
+}
+
+// ================= RESET =================
+function resetNota(){
+no = 1;
+updateNota();
+}
+
+// ================= INSTALL APP =================
+let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt",(e)=>{
+e.preventDefault();
+deferredPrompt = e;
+});
+
+function installApp(){
+if(deferredPrompt){
+deferredPrompt.prompt();
+deferredPrompt.userChoice.then(()=>{
+deferredPrompt = null;
+});
+}else{
+alert("Install tidak tersedia");
+}
+}
+
+// ================= SERVICE WORKER =================
+if("serviceWorker" in navigator){
+window.addEventListener("load",()=>{
+navigator.serviceWorker.register("sw.js");
+});
+}
+
+</script>
+
+</body>
+</html>
