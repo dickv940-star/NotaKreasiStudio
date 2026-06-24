@@ -50,21 +50,21 @@ background:white;
     display:flex;
     flex-direction:column;
     align-items:flex-start;
+    gap:2px;
 }
 .logo img{
     width:260px;
     height:auto;
     display:block;
-    margin:0;   
-}
+    margin:0;
 .logo h2{
-    margin:-5px 0 3px 0;
+    margin:0;
     color:#c40000;
     font-size:18px;
     line-height:1.1;
 }
 
-logo p{
+.logo p{
     margin:1px 0;
     font-size:13px;
     line-height:1.2;
@@ -448,6 +448,12 @@ Install App
 
 <script>
 
+const tanggal = document.getElementById("tanggal");
+const nota = document.getElementById("nota");
+const total = document.getElementById("total");
+const dp = document.getElementById("dp");
+const sisa = document.getElementById("sisa");
+const notaArea = document.getElementById("notaArea");    
 
 function formatAngka(n){
 
@@ -455,8 +461,6 @@ return Number(n)
 .toLocaleString("id-ID");
 
 }
-
-
 
 function angka(v){
 
@@ -467,8 +471,6 @@ String(v)
 )||0;
 
 }
-
-
 
 
 // NOMOR NOTA
@@ -484,41 +486,30 @@ tanggal.value;
 if(!t)
 return "000000";
 
-
-
 let d=t.split("-");
 
-
 return d[2]+d[1]+d[0].slice(2);
-
 
 }
 
 
-
 function updateNota(){
-
 
 let nomor=buatNomor();
 
-
 nota.innerText=nomor;
-
 
 localStorage.setItem(
 "nota",
 nomor
 );
 
-
 }
-
 
 
 tanggal.valueAsDate=new Date();
 
 updateNota();
-
 
 tanggal.addEventListener(
 "change",
@@ -526,43 +517,28 @@ updateNota
 );
 
 
-
-
-
-
 // FORMAT INPUT
-
 
 document
 .querySelectorAll(".qty,.harga,#dp")
 .forEach(el=>{
 
+el.addEventListener("input", hitung);
 
 el.addEventListener(
 "blur",
 ()=>{
 
-
 let a=angka(el.innerText);
-
 
 el.innerText =
 a ? formatAngka(a) : "";
 
-
 hitung();
 
-
 });
-
-
+    
 });
-
-
-
-
-
-
 function hitung(){
 
 
@@ -633,57 +609,40 @@ totalNilai-bayar
 
 // JPG
 
-
 function downloadJPG(){
-
 
 html2canvas(
 notaArea,
 {
-scale:3
+scale:3,
+useCORS:true,
+backgroundColor:"#ffffff"
 }
-
 ).then(canvas=>{
-
 
 let a=document.createElement("a");
 
-
 a.download="nota.jpg";
 
-a.href=
-canvas.toDataURL();
-
+a.href=canvas.toDataURL();
 
 a.click();
 
-
 });
-
 
 }
 
-
-
-
-
 // RESET
 
-
 function resetNota(){
-
 
 document
 .querySelectorAll(".edit")
 .forEach(x=>x.innerText="");
 
-
-
 document
 .querySelectorAll(".jumlah")
 .forEach(x=>x.innerText="");
-
-
 
 dp.innerText="";
 
@@ -691,11 +650,11 @@ total.innerText="0";
 
 sisa.innerText="0";
 
+tanggal.valueAsDate = new Date();
+
+updateNota();
 
 }
-
-
-
 
 
 // PWA
@@ -714,10 +673,7 @@ deferredPrompt=e;
 
 });
 
-
-
 function installApp(){
-
 
 if(deferredPrompt){
 
@@ -733,17 +689,13 @@ alert("Install belum tersedia");
 
 }
 
-
 }
-
-
-
 
 if("serviceWorker" in navigator){
 
-navigator.serviceWorker.register(
-"sw.js"
-);
+navigator.serviceWorker
+.register("sw.js")
+.catch(err=>console.log(err));
 
 }
 
