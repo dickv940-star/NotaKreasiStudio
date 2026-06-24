@@ -494,43 +494,45 @@ document.addEventListener("input", hitung);
     
 function hitung(){
 
-let totalNilai = 0;
+  let totalNilai = 0;
 
-document.querySelectorAll("tbody tr")
-.forEach(row => {
+  document.querySelectorAll("tbody tr").forEach(row => {
 
-let qty = angka(row.querySelector(".qty").innerText);
-let harga = angka(row.querySelector(".harga").innerText);
+    let qty = angka(row.querySelector(".qty").innerText);
+    let harga = angka(row.querySelector(".harga").innerText);
 
-let jumlah = qty * harga;
+    let jumlah = qty * harga;
 
-row.querySelector(".jumlah").innerText =
-jumlah ? formatAngka(jumlah) : "";
+    row.querySelector(".jumlah").innerText =
+      jumlah ? formatAngka(jumlah) : "";
 
-totalNilai += jumlah;
+    totalNilai += jumlah;
+  });
 
-});
+  // TOTAL
+  total.innerText = formatAngka(totalNilai);
 
-total.innerText = formatAngka(totalNilai);
+  // DP
+  let bayar = angka(dp.innerText || "0");
 
-let bayar = angka(dp.innerText || "0");
-let sisaNilai = totalNilai - bayar;
+  // SISA = TOTAL - DP
+  let sisaNilai = totalNilai - bayar;
 
-let lunasBox = document.getElementById("lunasBox");
+  if (sisaNilai < 0) sisaNilai = 0;
 
-if(totalNilai > 0 && sisaNilai <= 0){
-    sisa.innerText = "0";
+  sisa.innerText = formatAngka(sisaNilai);
+
+  // LUNAS
+  let lunasBox = document.getElementById("lunasBox");
+
+  if (totalNilai > 0 && sisaNilai === 0) {
     lunasBox.style.display = "block";
-}else{
-    sisa.innerText = formatAngka(sisaNilai);
+  } else {
     lunasBox.style.display = "none";
+  }
 }
 
-}
-    
-// =====================
 // DOWNLOAD JPG
-// =====================
 
 function downloadJPG(){
 
