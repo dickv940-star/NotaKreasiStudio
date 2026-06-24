@@ -181,7 +181,12 @@ margin:5px;
 cursor:pointer;
 
 }
-
+    
+button{
+    font-weight:bold;
+    padding:6px 10px;
+}
+    
 @media print{
 
 
@@ -197,10 +202,22 @@ padding:0;
 .buttons{
 display:none;
 }
-
+#lunasBox{
+    width:100%;
+    text-align:center;
+    margin-top:10px;
 }
 
-
+#lunasText{
+    font-size:40px;
+    font-weight:900;
+    color:green;
+    border:3px solid green;
+    display:inline-block;
+    padding:5px 20px;
+    border-radius:10px;
+}
+    
 </style>
 
 </head>
@@ -359,12 +376,9 @@ PERHATIAN !!!
 - Barang & jasa yang sudah dibeli tidak dapat dikembalikan/ditukar.
 </p>
 
-
 <p>
 - Barang yang tidak diambil dalam jangka waktu 1 bulan rusak/hilang bukan tanggung jawab kami lagi.
 </p>
-
-
 
 <h3>
 Terima Kasih Sudah Berbelanja Di Toko Kami
@@ -406,7 +420,9 @@ Terima Kasih Sudah Berbelanja Di Toko Kami
 
 
 </div>
-
+<div id="lunasBox" style="display:none;text-align:center;margin-top:10px;">
+    <div id="lunasText">LUNAS</div>
+</div>
 
 </div>
 
@@ -440,6 +456,17 @@ Reset
 Install App
 </button>
 
+<div style="text-align:center;margin-top:10px;">
+
+<button onclick="cmd('bold')"><b>B</b></button>
+
+<button onclick="cmd('italic')"><i>I</i></button>
+
+<button onclick="cmd('justifyLeft')">⬅</button>
+
+<button onclick="cmd('justifyCenter')">⬤</button>
+
+<button onclick="cmd('justifyRight')">➡</button>
 
 </div>
 
@@ -456,261 +483,200 @@ Install App
 
 
 <script>
-
+    
 const tanggal = document.getElementById("tanggal");
 const nota = document.getElementById("nota");
 const total = document.getElementById("total");
 const dp = document.getElementById("dp");
 const sisa = document.getElementById("sisa");
-const notaArea = document.getElementById("notaArea");    
+const notaArea = document.getElementById("notaArea");
 
 function formatAngka(n){
-
-return Number(n)
-.toLocaleString("id-ID");
-
+return Number(n).toLocaleString("id-ID");
 }
 
 function angka(v){
-
 return Number(
 String(v)
 .replace(/\./g,'')
 .replace(/[^0-9]/g,'')
-)||0;
-
+) || 0;
 }
 
 
+// =====================
 // NOMOR NOTA
-
+// =====================
 
 function buatNomor(){
+let t = tanggal.value;
+if(!t) return "000000";
 
-
-let t =
-tanggal.value;
-
-
-if(!t)
-return "000000";
-
-let d=t.split("-");
-
-return d[2]+d[1]+d[0].slice(2);
-
+let d = t.split("-");
+return d[2] + d[1] + d[0].slice(2);
 }
-
 
 function updateNota(){
+let nomor = buatNomor();
+nota.innerText = nomor;
 
-let nomor=buatNomor();
-
-nota.innerText=nomor;
-
-localStorage.setItem(
-"nota",
-nomor
-);
-
+localStorage.setItem("nota", nomor);
 }
 
 
-tanggal.valueAsDate=new Date();
-
+// init tanggal
+tanggal.valueAsDate = new Date();
 updateNota();
 
-tanggal.addEventListener(
-"change",
-updateNota
-);
+tanggal.addEventListener("change", updateNota);
 
 
-// FORMAT INPUT
+// =====================
+// INPUT FORMAT + HITUNG
+// =====================
 
-document
-.querySelectorAll(".qty,.harga,#dp")
-.forEach(el=>{
+document.querySelectorAll(".qty,.harga,#dp")
+.forEach(el => {
 
 el.addEventListener("input", hitung);
 
-el.addEventListener(
-"blur",
-()=>{
-
-let a=angka(el.innerText);
-
-el.innerText =
-a ? formatAngka(a) : "";
-
+el.addEventListener("blur", () => {
+let a = angka(el.innerText);
+el.innerText = a ? formatAngka(a) : "";
 hitung();
+});
 
 });
-    
-});
+
 function hitung(){
 
+let totalNilai = 0;
 
-let totalNilai=0;
+document.querySelectorAll("tbody tr")
+.forEach(row => {
 
+let qty = angka(row.querySelector(".qty").innerText);
+let harga = angka(row.querySelector(".harga").innerText);
 
+let jumlah = qty * harga;
 
-document
-.querySelectorAll("tbody tr")
-.forEach(row=>{
-
-
-let qty =
-angka(
-row.querySelector(".qty").innerText
-);
-
-
-
-let harga =
-angka(
-row.querySelector(".harga").innerText
-);
-
-
-
-let jumlah =
-qty*harga;
-
-
-
-row.querySelector(".jumlah")
-.innerText =
-jumlah ? formatAngka(jumlah):"";
-
-
+row.querySelector(".jumlah").innerText =
+jumlah ? formatAngka(jumlah) : "";
 
 totalNilai += jumlah;
 
-
-
 });
 
+total.innerText = formatAngka(totalNilai);
 
+let bayar = angka(dp.innerText);
+let sisaNilai = totalNilai - bayar;
 
-total.innerText =
-formatAngka(totalNilai);
+let lunasBox = document.getElementById("lunasBox");
 
-
-
-let bayar =
-angka(dp.innerText);
-
-
-
-sisa.innerText =
-formatAngka(
-totalNilai-bayar
-);
-
-
-
+if(totalNilai > 0 && sisaNilai <= 0){
+    sisa.innerText = "0";
+    lunasBox.style.display = "block";
+}else{
+    sisa.innerText = formatAngka(sisaNilai);
+    lunasBox.style.display = "none";
 }
-
-
-
-
-
-// JPG
+function cmd(command){
+document.execCommand(command,false,null);
+}
+    
+// =====================
+// DOWNLOAD JPG
+// =====================
 
 function downloadJPG(){
 
-html2canvas(
-notaArea,
-{
+html2canvas(notaArea,{
 scale:3,
 useCORS:true,
 backgroundColor:"#ffffff"
-}
-).then(canvas=>{
+}).then(canvas => {
 
-let a=document.createElement("a");
-
-a.download="nota.jpg";
-
-a.href=canvas.toDataURL();
-
+let a = document.createElement("a");
+a.download = "nota.jpg";
+a.href = canvas.toDataURL();
 a.click();
 
 });
 
 }
 
+
+// =====================
 // RESET
+// =====================
 
 function resetNota(){
 
-document
-.querySelectorAll(".edit")
-.forEach(x=>x.innerText="");
+document.querySelectorAll(".edit")
+.forEach(x => x.innerText = "");
 
-document
-.querySelectorAll(".jumlah")
-.forEach(x=>x.innerText="");
+document.querySelectorAll(".jumlah")
+.forEach(x => x.innerText = "");
 
-dp.innerText="";
-
-total.innerText="0";
-
-sisa.innerText="0";
+dp.innerText = "";
+total.innerText = "0";
+sisa.innerText = "0";
 
 tanggal.valueAsDate = new Date();
-
 updateNota();
 
 }
 
 
-// PWA
-
+// =====================
+// PWA INSTALL
+// =====================
 
 let deferredPrompt;
 
-
-window.addEventListener(
-"beforeinstallprompt",
-e=>{
-
+window.addEventListener("beforeinstallprompt", e => {
 e.preventDefault();
-
-deferredPrompt=e;
-
+deferredPrompt = e;
 });
 
 function installApp(){
 
 if(deferredPrompt){
-
 deferredPrompt.prompt();
-
-deferredPrompt=null;
-
+deferredPrompt = null;
 }
-
 else{
-
 alert("Install belum tersedia");
-
 }
 
 }
+   
+document.addEventListener("click", function(e){
+
+let target = e.target;
+
+document.querySelectorAll("[contenteditable]")
+.forEach(el => el.removeAttribute("contenteditable"));
+
+// aktifkan hanya yang diklik di nota
+if(
+target.closest("#notaArea") &&
+target.tagName !== "BUTTON" &&
+target.tagName !== "INPUT" &&
+target.tagName !== "TH"
+){
+    target.setAttribute("contenteditable","true");
+}
+
+});
 
 if("serviceWorker" in navigator){
-
 navigator.serviceWorker
 .register("sw.js")
-.catch(err=>console.log(err));
-
+.catch(err => console.log(err));
 }
-
 
 </script>
 
-
-</body>
-</html>
+</body>  
