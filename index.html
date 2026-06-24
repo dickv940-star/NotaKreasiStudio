@@ -362,8 +362,6 @@ NO :
 
 
 
-
-
 <div class="footer">
 
 
@@ -390,10 +388,6 @@ Terima Kasih Sudah Berbelanja Di Toko Kami
 
 
 </div>
-
-
-
-
 
 
 <div class="payment">
@@ -430,7 +424,6 @@ Terima Kasih Sudah Berbelanja Di Toko Kami
 
 </div>
 
-
 </div>
 
 
@@ -456,10 +449,8 @@ Reset
 Install App
 </button>
 
-<button onclick="setNotaBaru()">Transaksi Baru</button>
-    
 <button onclick="toggleEdit()">Edit Teks</button>
-
+    
 <div id="toolbarEdit" style="display:none;text-align:center;margin:10px;">
       
 <button onclick="cmd('bold')"><b>B</b></button>
@@ -469,8 +460,10 @@ Install App
 <button onclick="cmd('justifyCenter')">⬤</button>
 <button onclick="cmd('justifyRight')">➡</button>
 
+ <div id="notaArea">
+     
 </div>
-
+    
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 
@@ -618,17 +611,19 @@ alert("Install belum tersedia");
 
 // EDIT MODE TOOLBAR
 
-function toggleEdit(){
+function toggleEdit() {
+    let toolbar = document.getElementById("toolbarEdit");
+    let notaArea = document.getElementById("notaArea");
 
-let toolbar = document.getElementById("toolbarEdit");
+    let isOn = toolbar.style.display === "block";
 
-if(document.designMode === "on"){
-    document.designMode = "off";
-    toolbar.style.display = "none";
-}else{
-    document.designMode = "on";
-    toolbar.style.display = "block";
-}
+    if (isOn) {
+        toolbar.style.display = "none";
+        notaArea.setAttribute("contenteditable", "false");
+    } else {
+        toolbar.style.display = "block";
+        notaArea.setAttribute("contenteditable", "true");
+    }
 
 }
 let lastNota = Number(localStorage.getItem("lastNota")) || 0;
@@ -659,7 +654,7 @@ nota?.addEventListener("blur", () => {
     
 // FORMAT TEKS
 function cmd(command){
-document.execCommand(command,false,null);
+    document.execCommand(command, false, null);
 }
 
 // SERVICE WORKER
