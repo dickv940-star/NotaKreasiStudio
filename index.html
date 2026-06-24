@@ -1,317 +1,775 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Kreasi Studio</title>
 
-<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c40000">
 
-<!-- ICON TAB BROWSER -->
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="icon" href="logo.png">
+
 
 <style>
-body{
-    font-family:Arial, sans-serif;
-    background:#f5f5f5;
-    margin:0;
-    padding:20px;
+
+*{
+box-sizing:border-box;
 }
+
+body{
+margin:0;
+padding:20px;
+font-family:Arial,Helvetica,sans-serif;
+background:#eee;
+}
+
 
 .container{
-    max-width:900px;
-    margin:auto;
-    background:#fff;
-    padding:20px;
-    border:1px solid #ddd;
+max-width:900px;
+margin:auto;
+background:white;
+padding:20px;
 }
+
+
+#notaArea{
+background:white;
+}
+
 
 .header{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:40px;
-}
-    
-..logo{
-    display:flex;
-    flex-direction:column;  
-    align-items:flex-start;
-    gap:2px;
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
 }
 
-.logo{
-    gap:2px;
-}
 
 .logo img{
-    height:240px;
-    width:auto;
-    display:block;
-    margin:0;
+width:420px;
+max-width:100%;
 }
-    
-.logo h2{
-    margin:2px 0 0 0;
-    line-height:1.1;
-    color:#c40000;
-    font-size:18px;
+
+
+.logo p{
+margin:3px 0;
+font-size:15px;
 }
-..logo p{
-    margin:1px 0;
-    line-height:1.2;
-}
+
+
 
 .info{
-    text-align:right;
-    display:flex;
-    flex-direction:column;
-    gap:5px;
+text-align:right;
+font-size:17px;
 }
+
+
+
+.info input{
+padding:5px;
+}
+
+
 
 table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-    table-layout:auto;
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
 }
 
-table, th, td{
-    border:1px solid #000;
+
+
+th,td{
+border:2px solid #000;
+height:45px;
 }
 
-th, td{
-    padding:8px;
-    vertical-align:top;
+
+
+th{
+font-size:18px;
 }
 
-.editable{
-    min-height:20px;
-    outline:none;
-    word-break:break-word;
+
+
+td{
+padding:5px;
 }
 
-.editable:focus{
-    background:#fff3cd;
+
+
+.edit{
+outline:none;
 }
 
-.total{
-    margin-top:20px;
-    text-align:right;
+
+
+.edit:focus{
+background:#fff2b8;
 }
+
+
+
+.footer{
+display:flex;
+}
+
+
+
+.warning{
+width:60%;
+padding:12px;
+}
+
+
+
+.warning h2{
+color:red;
+}
+
+
+
+.warning h3{
+
+font-size:13px;
+font-weight:normal;
+margin-top:20px;
+
+}
+
+
+
+.payment{
+width:40%;
+}
+
+
+
+.payment td{
+text-align:center;
+font-size:18px;
+}
+
+
+
+
+.buttons{
+
+text-align:center;
+margin-top:20px;
+
+}
+
+
 
 button{
-    background:#c40000;
-    color:white;
-    border:none;
-    padding:10px 20px;
-    cursor:pointer;
-    margin:5px;
+
+background:#c40000;
+color:white;
+border:0;
+padding:12px 20px;
+margin:5px;
+cursor:pointer;
+
 }
 
+
+
 @media print{
-    button{
-        display:none;
-    }
+
+
+body{
+background:white;
+padding:0;
 }
+
+
+.container{
+padding:0;
+}
+
+
+.buttons{
+display:none;
+}
+
+}
+
+
 </style>
+
 </head>
+
 
 <body>
 
-<div class="container" id="notaArea">
+
+<div class="container">
+
+
+<div id="notaArea">
+
+
 
 <!-- HEADER -->
+
 <div class="header">
 
-  <div class="logo">
-    <img src="logo.png">
-    <h2>Studio Foto & Make Up</h2>
-    <p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
-    <p>WA : 0882 1218 1283</p>
-</div>
-  <div class="info">
-    <p>Tanggal : <input type="date" id="tanggal"></p>
-    <p>No Nota : <span id="nota"></span></p>
-  </div>
+
+
+<div class="logo">
+
+
+<img src="logo.png">
+
+
+<p>
+Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara
+</p>
+
+
+<p>
+☎ 0882 1218 1283 (WA)
+</p>
+
+
+<p>
+◎ kreasi.studio
+</p>
+
 
 </div>
 
-<!-- TABLE -->
+
+
+
+<div class="info">
+
+
+<p>
+
+Terima Tgl :
+<input type="date" id="tanggal">
+
+</p>
+
+
+<p>
+
+Selesai Tgl :
+<input type="date">
+
+</p>
+
+
+
+<h2>
+
+NO :
+<span id="nota"></span>
+
+</h2>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<!-- TABEL -->
+
+
 <table>
+
+
 <thead>
+
 <tr>
+
 <th>KETERANGAN</th>
 <th>BANYAK</th>
 <th>HARGA</th>
 <th>JUMLAH</th>
+
 </tr>
+
 </thead>
+
+
 
 <tbody>
 
-<tr>
-<td contenteditable="true" class="ket"></td>
-<td contenteditable="true" class="qty"></td>
-<td contenteditable="true" class="harga"></td>
-<td class="subtotal"></td>
-</tr>
 
 <tr>
-<td contenteditable="true" class="ket"></td>
-<td contenteditable="true" class="qty"></td>
-<td contenteditable="true" class="harga"></td>
-<td class="subtotal"></td>
+<td class="edit" contenteditable="true"></td>
+<td class="edit qty" contenteditable="true"></td>
+<td class="edit harga" contenteditable="true"></td>
+<td class="jumlah"></td>
 </tr>
 
-<tr>
-<td contenteditable="true" class="ket"></td>
-<td contenteditable="true" class="qty"></td>
-<td contenteditable="true" class="harga"></td>
-<td class="subtotal"></td>
-</tr>
 
 <tr>
-<td contenteditable="true" class="ket"></td>
-<td contenteditable="true" class="qty"></td>
-<td contenteditable="true" class="harga"></td>
-<td class="subtotal"></td>
+<td class="edit" contenteditable="true"></td>
+<td class="edit qty" contenteditable="true"></td>
+<td class="edit harga" contenteditable="true"></td>
+<td class="jumlah"></td>
 </tr>
 
+
 <tr>
-<td contenteditable="true" class="ket"></td>
-<td contenteditable="true" class="qty"></td>
-<td contenteditable="true" class="harga"></td>
-<td class="subtotal"></td>
+<td class="edit" contenteditable="true"></td>
+<td class="edit qty" contenteditable="true"></td>
+<td class="edit harga" contenteditable="true"></td>
+<td class="jumlah"></td>
 </tr>
+
+
+<tr>
+<td class="edit" contenteditable="true"></td>
+<td class="edit qty" contenteditable="true"></td>
+<td class="edit harga" contenteditable="true"></td>
+<td class="jumlah"></td>
+</tr>
+
+
+<tr>
+<td class="edit" contenteditable="true"></td>
+<td class="edit qty" contenteditable="true"></td>
+<td class="edit harga" contenteditable="true"></td>
+<td class="jumlah"></td>
+</tr>
+
 
 </tbody>
+
 </table>
 
-<!-- TOTAL -->
-<div class="total">
-<h3>Total : Rp <span id="total">0</span></h3>
 
-<button onclick="window.print()">Cetak Nota</button>
-<button onclick="downloadJPG()">Download JPG</button>
-<button onclick="resetNota()">Reset</button>
-<button onclick="installApp()">Install App</button>
+
+
+
+<div class="footer">
+
+
+
+<div class="warning">
+
+
+<h2>
+PERHATIAN !!!
+</h2>
+
+
+<p>
+- Barang & jasa yang sudah dibeli tidak dapat dikembalikan/ditukar.
+</p>
+
+
+<p>
+- Barang yang tidak diambil dalam jangka waktu 1 bulan rusak/hilang bukan tanggung jawab kami lagi.
+</p>
+
+
+
+<h3>
+Terima Kasih Sudah Berbelanja Di Toko Kami
+</h3>
+
+
 </div>
 
+
+
+
+
+
+<div class="payment">
+
+
+<table>
+
+
+<tr>
+<th>Total</th>
+<td id="total">0</td>
+</tr>
+
+
+<tr>
+<th>DP</th>
+<td id="dp" contenteditable="true"></td>
+</tr>
+
+
+<tr>
+<th>Sisa</th>
+<td id="sisa">0</td>
+</tr>
+
+
+</table>
+
+
 </div>
 
-<!-- LIB -->
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+<div class="buttons">
+
+
+<button onclick="window.print()">
+Cetak Nota
+</button>
+
+
+<button onclick="downloadJPG()">
+Download JPG
+</button>
+
+
+<button onclick="resetNota()">
+Reset
+</button>
+
+
+<button onclick="installApp()">
+Install App
+</button>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+
 
 <script>
 
-// ================= FORMAT RUPIAH =================
-function formatRupiah(angka){
-return new Intl.NumberFormat("id-ID").format(angka);
+
+function formatAngka(n){
+
+return Number(n)
+.toLocaleString("id-ID");
+
 }
 
-// ================= NO NOTA =================
-let no = localStorage.getItem("nota") || 1;
+
+
+function angka(v){
+
+return Number(
+String(v)
+.replace(/\./g,'')
+.replace(/[^0-9]/g,'')
+)||0;
+
+}
+
+
+
+
+// NOMOR NOTA
+
+
+function buatNomor(){
+
+
+let t =
+tanggal.value;
+
+
+if(!t)
+return "000000";
+
+
+
+let d=t.split("-");
+
+
+return d[2]+d[1]+d[0].slice(2);
+
+
+}
+
+
 
 function updateNota(){
-document.getElementById("nota").textContent = String(no).padStart(4,"0");
-localStorage.setItem("nota", no);
+
+
+let nomor=buatNomor();
+
+
+nota.innerText=nomor;
+
+
+localStorage.setItem(
+"nota",
+nomor
+);
+
+
 }
+
+
+
+tanggal.valueAsDate=new Date();
 
 updateNota();
-no++;
 
-// ================= TANGGAL =================
-document.getElementById("tanggal").valueAsDate = new Date();
 
-// ================= KONVERSI ANGKA =================
-function toNumber(val){
-let num = parseFloat((val || "").toString().replace(/[^0-9]/g,''));
-return isNaN(num) ? 0 : num;
-}
+tanggal.addEventListener(
+"change",
+updateNota
+);
 
-// ================= INPUT EVENT =================
-document.querySelectorAll(".qty, .harga").forEach(el=>{
-el.addEventListener("blur", function(){
-let val = this.innerText.replace(/[^0-9]/g,'');
-if(val){
-this.innerText = formatRupiah(val);
-}
+
+
+
+
+
+// FORMAT INPUT
+
+
+document
+.querySelectorAll(".qty,.harga,#dp")
+.forEach(el=>{
+
+
+el.addEventListener(
+"blur",
+()=>{
+
+
+let a=angka(el.innerText);
+
+
+el.innerText =
+a ? formatAngka(a) : "";
+
+
 hitung();
-});
+
+
 });
 
-// ================= HITUNG TOTAL =================
+
+});
+
+
+
+
+
+
 function hitung(){
-let rows = document.querySelectorAll("tbody tr");
-let total = 0;
 
-rows.forEach(row=>{
-let qty = toNumber(row.querySelector(".qty").innerText);
-let harga = toNumber(row.querySelector(".harga").innerText);
 
-let subtotal = qty * harga;
+let totalNilai=0;
 
-row.querySelector(".subtotal").innerText =
-subtotal ? formatRupiah(subtotal) : "";
 
-total += subtotal;
+
+document
+.querySelectorAll("tbody tr")
+.forEach(row=>{
+
+
+let qty =
+angka(
+row.querySelector(".qty").innerText
+);
+
+
+
+let harga =
+angka(
+row.querySelector(".harga").innerText
+);
+
+
+
+let jumlah =
+qty*harga;
+
+
+
+row.querySelector(".jumlah")
+.innerText =
+jumlah ? formatAngka(jumlah):"";
+
+
+
+totalNilai += jumlah;
+
+
+
 });
 
-document.getElementById("total").innerText = formatRupiah(total);
+
+
+total.innerText =
+formatAngka(totalNilai);
+
+
+
+let bayar =
+angka(dp.innerText);
+
+
+
+sisa.innerText =
+formatAngka(
+totalNilai-bayar
+);
+
+
+
 }
 
-// ================= DOWNLOAD JPG =================
+
+
+
+
+// JPG
+
+
 function downloadJPG(){
-const el = document.getElementById("notaArea");
 
-html2canvas(el,{
-scale:2,
-useCORS:true
-}).then(canvas=>{
-let a = document.createElement("a");
-a.download = "nota.jpg";
-a.href = canvas.toDataURL("image/jpeg",1.0);
+
+html2canvas(
+notaArea,
+{
+scale:3
+}
+
+).then(canvas=>{
+
+
+let a=document.createElement("a");
+
+
+a.download="nota.jpg";
+
+a.href=
+canvas.toDataURL();
+
+
 a.click();
+
+
 });
+
+
 }
 
-// ================= RESET =================
+
+
+
+
+// RESET
+
+
 function resetNota(){
-no = 1;
-updateNota();
+
+
+document
+.querySelectorAll(".edit")
+.forEach(x=>x.innerText="");
+
+
+
+document
+.querySelectorAll(".jumlah")
+.forEach(x=>x.innerText="");
+
+
+
+dp.innerText="";
+
+total.innerText="0";
+
+sisa.innerText="0";
+
+
 }
 
-// ================= INSTALL APP =================
+
+
+
+
+// PWA
+
+
 let deferredPrompt;
 
-window.addEventListener("beforeinstallprompt",(e)=>{
+
+window.addEventListener(
+"beforeinstallprompt",
+e=>{
+
 e.preventDefault();
-deferredPrompt = e;
+
+deferredPrompt=e;
+
 });
+
+
 
 function installApp(){
+
+
 if(deferredPrompt){
+
 deferredPrompt.prompt();
-deferredPrompt.userChoice.then(()=>{
-deferredPrompt = null;
-});
-}else{
-alert("Install tidak tersedia");
-}
+
+deferredPrompt=null;
+
 }
 
-// ================= SERVICE WORKER =================
-if("serviceWorker" in navigator){
-window.addEventListener("load",()=>{
-navigator.serviceWorker.register("sw.js");
-});
+else{
+
+alert("Install belum tersedia");
+
 }
+
+
+}
+
+
+
+
+if("serviceWorker" in navigator){
+
+navigator.serviceWorker.register(
+"sw.js"
+);
+
+}
+
 
 </script>
+
 
 </body>
 </html>
