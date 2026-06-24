@@ -515,22 +515,19 @@ function hitung(){
   total.innerText = formatAngka(totalNilai);
 
   // DP
-  let bayar = angka(dp.innerText || "0");
+  let bayar = angka(dp.innerText);
 
-  // SISA
+// DP kosong → SISA kosong
+if (!dp.innerText || dp.innerText.trim() === "") {
+  sisa.innerText = "";
+} else {
+
   let sisaNilai = totalNilai - bayar;
+
   if (sisaNilai < 0) sisaNilai = 0;
 
   sisa.innerText = formatAngka(sisaNilai);
-
-  // LUNAS
-  let lunasBox = document.getElementById("lunasBox");
-
-  if (totalNilai > 0 && sisaNilai === 0) {
-    lunasBox.style.display = "block";
-  } else {
-    lunasBox.style.display = "none";
-  }
+}
 }
 // DOWNLOAD JPG
 
