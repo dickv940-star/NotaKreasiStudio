@@ -498,13 +498,15 @@ function hitung(){
 
   document.querySelectorAll("tbody tr").forEach(row => {
 
-    let qty = angka(row.querySelector(".qty").innerText);
-    let harga = angka(row.querySelector(".harga").innerText);
+    let qty = angka(row.querySelector(".qty")?.innerText);
+    let harga = angka(row.querySelector(".harga")?.innerText);
 
     let jumlah = qty * harga;
 
-    row.querySelector(".jumlah").innerText =
-      jumlah ? formatAngka(jumlah) : "";
+    let cell = row.querySelector(".jumlah");
+    if (cell) {
+      cell.innerText = jumlah ? formatAngka(jumlah) : "";
+    }
 
     totalNilai += jumlah;
   });
@@ -515,9 +517,8 @@ function hitung(){
   // DP
   let bayar = angka(dp.innerText || "0");
 
-  // SISA = TOTAL - DP
+  // SISA
   let sisaNilai = totalNilai - bayar;
-
   if (sisaNilai < 0) sisaNilai = 0;
 
   sisa.innerText = formatAngka(sisaNilai);
@@ -531,7 +532,6 @@ function hitung(){
     lunasBox.style.display = "none";
   }
 }
-
 // DOWNLOAD JPG
 
 function downloadJPG(){
