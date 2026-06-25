@@ -61,7 +61,7 @@ background:#eee;
 
 #notaArea{
     background:white;
-    padding:20px;
+    padding:10px;
     box-sizing:border-box;
 }
 
@@ -458,7 +458,10 @@ Download JPG
 <button onclick="resetNota()">
 Reset
 </button>
-
+    
+<button onclick="toggleLunas()">
+LUNAS
+</button>
 
 <button onclick="installApp()">
 Install App
@@ -561,7 +564,7 @@ function downloadJPG(){
 html2canvas(document.getElementById("notaArea"))
     .then(canvas => {
 
-        const padding = 20;
+        const padding = 10;
 
         const newCanvas = document.createElement("canvas");
         newCanvas.width = canvas.width + (padding * 2);
@@ -583,7 +586,17 @@ html2canvas(document.getElementById("notaArea"))
 
 }
 
+function toggleLunas(){
 
+    const box = document.getElementById("lunasBox");
+
+    if(box.style.display === "none" || box.style.display === ""){
+        box.style.display = "block";
+    }else{
+        box.style.display = "none";
+    }
+
+}
 // RESET
 function resetNota(){
 
