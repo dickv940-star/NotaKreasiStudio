@@ -180,32 +180,38 @@ margin-top:20px;
     width:40%;
     position:relative;
 }
-}
+
 #lunasBox{
     display:none;
-
     position:absolute;
 
-    top:50%;
-    left:50%;
+    top:55%;
+    left:52%;
 
-    transform:translate(-50%,-50%) rotate(-15deg);
+    transform:translate(-50%,-50%) rotate(-12deg);
 
     z-index:9999;
-
     pointer-events:none;
 }
-#lunasText{
-    font-size:70px;
-    font-weight:900;
-    color:rgba(255,0,0,.25);
-    border:6px solid rgba(255,0,0,.25);
-    padding:12px 40px;
-    border-radius:12px;
-    letter-spacing:5px;
-    background:transparent;
-}
 
+#lunasText{
+    display:inline-block;
+
+    padding:4px 18px;
+
+    border:3px solid rgba(220,0,0,0.28);
+
+    color:rgba(220,0,0,0.28);
+
+    font-size:34px;
+    font-weight:900;
+
+    letter-spacing:3px;
+
+    border-radius:6px;
+
+    font-family:Arial, sans-serif;
+}
 .buttons{
 
 text-align:center;
@@ -578,10 +584,11 @@ html2canvas(document.getElementById("notaArea"))
 function toggleLunas(){
     const box = document.getElementById("lunasBox");
 
-    box.style.display =
-        box.style.display === "block"
-        ? "none"
-        : "block";
+    if(box.style.display === "block"){
+        box.style.display = "none";
+    }else{
+        box.style.display = "block";
+    }
 }
 
 // RESET
