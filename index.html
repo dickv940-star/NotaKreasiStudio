@@ -176,17 +176,10 @@ font-weight:normal;
 margin-top:20px;
 
 }
-
-
-.payment{
-width:40%;
-}
-
 .payment{
     width:40%;
     position:relative;
 }
-
 
 .buttons{
 
@@ -213,7 +206,6 @@ button{
     
 @media print{
 
-
 body{
 background:white;
 padding:0;
@@ -228,32 +220,33 @@ display:none;
 }
 #lunasBox{
     display:none;
+
     position:absolute;
 
     top:50%;
     left:50%;
 
-    transform:translate(-50%,-50%) rotate(-12deg);
+    transform:translate(-50%,-50%) rotate(-15deg);
 
-    z-index:999;
+    z-index:9999;
+
     pointer-events:none;
 }
-
 #lunasText{
-    font-size:60px;
+    display:inline-block;
+
+    padding:8px 30px;
+
+    border:4px solid rgba(220,0,0,.35);
+
+    color:rgba(220,0,0,.35);
+
+    font-size:55px;
     font-weight:900;
 
-    color:rgba(220,0,0,0.25);
-
-    border:5px solid rgba(220,0,0,0.25);
-
-    padding:8px 25px;
+    letter-spacing:4px;
 
     border-radius:8px;
-
-    text-transform:uppercase;
-
-    letter-spacing:3px;
 }
 </style>
 
@@ -415,37 +408,31 @@ Terima Kasih Sudah Berbelanja Di Toko Kami
 
 <div class="payment">
 
+    <table>
 
-<table>
+        <tr>
+            <th>Total</th>
+            <td id="total">0</td>
+        </tr>
 
+        <tr>
+            <th>DP</th>
+            <td id="dp" contenteditable="true"></td>
+        </tr>
 
-<tr>
-<th>Total</th>
-<td id="total">0</td>
-</tr>
+        <tr>
+            <th>Sisa</th>
+            <td id="sisa">0</td>
+        </tr>
 
-
-<tr>
-<th>DP</th>
-<td id="dp" contenteditable="true"></td>
-</tr>
-
-
-<tr>
-<th>Sisa</th>
-<td id="sisa">0</td>
-</tr>
-
-</table>
+    </table>
 
     <div id="lunasBox">
         <div id="lunasText">LUNAS</div>
     </div>
 
-</div>
-    
 </div> <!-- payment -->
-    
+
 </div> <!-- footer -->
 
 </div> <!-- notaArea -->
@@ -453,16 +440,13 @@ Terima Kasih Sudah Berbelanja Di Toko Kami
 </div> <!-- container -->
 
 <div class="buttons">
-
 <button onclick="window.print()">
 Cetak Nota
 </button>
 
-
 <button onclick="downloadJPG()">
 Download JPG
 </button>
-
 
 <button onclick="resetNota()">
 Reset
@@ -596,14 +580,13 @@ html2canvas(document.getElementById("notaArea"))
 }
 
 function toggleLunas(){
-
     const box = document.getElementById("lunasBox");
 
-    if(box.style.display === "block"){
-        box.style.display = "none";
-    }else{
-        box.style.display = "block";
-    }
+    box.style.display =
+        box.style.display === "block"
+        ? "none"
+        : "block";
+}
 
 }
 // RESET
