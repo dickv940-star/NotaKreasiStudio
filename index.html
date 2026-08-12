@@ -575,26 +575,80 @@ if (!dp.innerText || dp.innerText.trim() === "") {
 
 function downloadJPG(){
 
-html2canvas(document.getElementById("notaArea"))
+    const notaArea = document.getElementById("notaArea");
+
+    html2canvas(notaArea, {
+        scale: 4,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+
+        // Membuat teks dan garis lebih tajam
+        logging: false,
+
+        // Ukuran mengikuti nota asli
+        width: notaArea.scrollWidth,
+        height: notaArea.scrollHeight,
+
+        windowWidth: notaArea.scrollWidth,
+        windowHeight: notaArea.scrollHeight
+    })
     .then(canvas => {
 
-        const padding = 10;
+        const padding = 40;
 
         const newCanvas = document.createElement("canvas");
-        newCanvas.width = canvas.width + (padding * 2);
-        newCanvas.height = canvas.height + (padding * 2);
+
+        newCanvas.width =
+            canvas.width + (padding * 2);
+
+        newCanvas.height =
+            canvas.height + (padding * 2);
 
         const ctx = newCanvas.getContext("2d");
 
+        // Background putih
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
 
-        ctx.drawImage(canvas, padding, padding);
+        ctx.fillRect(
+            0,
+            0,
+            newCanvas.width,
+            newCanvas.height
+        );
 
+        // Gambar hasil render resolusi tinggi
+        ctx.drawImage(
+            canvas,
+            padding,
+            padding
+        );
+
+        // JPEG kualitas maksimum
         const link = document.createElement("a");
-        link.download = "nota.jpg";
-        link.href = newCanvas.toDataURL("image/jpeg", 1.0);
+
+        link.download =
+            "Nota-Kreasi-Studio-HD.jpg";
+
+        link.href =
+            newCanvas.toDataURL(
+                "image/jpeg",
+                1.0
+            );
+
         link.click();
+
+    })
+    .catch(error => {
+
+        console.error(
+            "Gagal membuat JPG:",
+            error
+        );
+
+        alert(
+            "Gagal membuat gambar nota."
+        );
 
     });
 
