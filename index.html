@@ -687,8 +687,8 @@ nota?.addEventListener("blur", () => {
 function cmd(command){
   document.execCommand(command, false, null);
 }
-    
-  document.getElementById("tambahBaris").addEventListener("click", function () {
+  // TAMBAH BARIS
+document.getElementById("tambahBaris").addEventListener("click", function () {
 
     const tbody = document.getElementById("bodyNota");
 
@@ -703,6 +703,11 @@ function cmd(command){
 
     tbody.appendChild(baris);
 
+    // Fokus otomatis ke kolom keterangan
+    baris.querySelector(".edit").focus();
+
+    // Hitung ulang
+    hitung();
 });
     
 // SERVICE WORKER
