@@ -515,17 +515,24 @@ tanggal.valueAsDate = new Date();
 
 document.addEventListener("input", hitung);
 
-document.querySelectorAll(".qty,.harga,#dp")
-.forEach(el => {
+// FORMAT QTY, HARGA, DAN DP
+document.addEventListener("blur", function(e){
 
-  el.addEventListener("blur", () => {
-    let a = angka(el.innerText);
-    el.innerText = a ? formatAngka(a) : "";
-    hitung();
-  });
+    if(
+        e.target.classList.contains("qty") ||
+        e.target.classList.contains("harga") ||
+        e.target.id === "dp"
+    ){
 
-});
-document.addEventListener("input", hitung);
+        let a = angka(e.target.innerText);
+
+        e.target.innerText =
+            a ? formatAngka(a) : "";
+
+        hitung();
+    }
+
+}, true);
     
 function hitung(){
 
