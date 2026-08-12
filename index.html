@@ -249,6 +249,22 @@ padding:0;
 .buttons{
 display:none;
 }
+
+  #tambahBaris {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    border: 1px dashed #888;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#tambahBaris:hover {
+    background: #f5f5f5;
+}
     
 </style>
 
@@ -378,7 +394,9 @@ NO :
 
 </table>
 
-
+<button type="button" id="tambahBaris">
+    + Tambah Baris
+</button>
 
 <div class="footer">
 
@@ -669,6 +687,23 @@ nota?.addEventListener("blur", () => {
 function cmd(command){
   document.execCommand(command, false, null);
 }
+    
+  document.getElementById("tambahBaris").addEventListener("click", function () {
+
+    const tbody = document.getElementById("bodyNota");
+
+    const baris = document.createElement("tr");
+
+    baris.innerHTML = `
+        <td class="edit" contenteditable="true"></td>
+        <td class="edit qty" contenteditable="true"></td>
+        <td class="edit harga" contenteditable="true"></td>
+        <td class="jumlah"></td>
+    `;
+
+    tbody.appendChild(baris);
+
+});
     
 // SERVICE WORKER
 if("serviceWorker" in navigator){
