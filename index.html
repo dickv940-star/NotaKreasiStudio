@@ -764,28 +764,33 @@ nota?.addEventListener("blur", () => {
 function cmd(command){
   document.execCommand(command, false, null);
 }
-  // TAMBAH BARIS
-document.getElementById("tambahBaris").addEventListener("click", function () {
+ // TAMBAH BARIS
+const btnTambahBaris = document.getElementById("btnTambahBaris");
 
-    const tbody = document.getElementById("bodyNota");
+if (btnTambahBaris) {
 
-    const baris = document.createElement("tr");
+    btnTambahBaris.addEventListener("click", function () {
 
-    baris.innerHTML = `
-        <td class="edit" contenteditable="true"></td>
-        <td class="edit qty" contenteditable="true"></td>
-        <td class="edit harga" contenteditable="true"></td>
-        <td class="jumlah"></td>
-    `;
+        const tbody = document.getElementById("bodyNota");
 
-    tbody.appendChild(baris);
+        const baris = document.createElement("tr");
 
-    // Fokus otomatis ke kolom keterangan
-    baris.querySelector(".edit").focus();
+        baris.innerHTML = `
+            <td class="edit" contenteditable="true"></td>
+            <td class="edit qty" contenteditable="true"></td>
+            <td class="edit harga" contenteditable="true"></td>
+            <td class="jumlah"></td>
+        `;
 
-    // Hitung ulang
-    hitung();
-});
+        tbody.appendChild(baris);
+
+        // Fokus otomatis ke kolom keterangan
+        baris.querySelector(".edit").focus();
+
+        // Hitung ulang
+        hitung();
+
+    });
     
 // SERVICE WORKER
 if("serviceWorker" in navigator){
