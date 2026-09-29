@@ -609,7 +609,8 @@ function canvasToMonoBitmap(canvas,width,height){
       const sx=Math.min(srcW-1,Math.floor(x*srcW/width));
       const i=(sy*srcW+sx)*4;
       const lum=(src[i]*299+src[i+1]*587+src[i+2]*114)/1000;
-      if(lum<160) out[y*Math.ceil(width/8)+(x>>3)]|=(0x80>>(x&7));
+      /* TSPL standard: bit 0 prints black, bit 1 leaves white. */
+      if(lum>=160) out[y*Math.ceil(width/8)+(x>>3)]|=(0x80>>(x&7));
     }
   }
   return out;
