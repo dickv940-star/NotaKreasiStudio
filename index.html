@@ -45,6 +45,10 @@ button:hover{filter:brightness(.92)}
 .history-edit{background:#1677c8}.history-delete{background:#b00000}
 #tambahBaris{margin-top:10px;width:100%;padding:10px;border:1px dashed #888;border-radius:6px;background:white;cursor:pointer;font-size:14px;font-weight:bold;color:#222}
 .no-export{display:inline-flex}
+@media print{
+  .no-export{display:none!important}
+}
+
 
 @media(max-width:700px){
  body{padding:8px}.container{margin:10px auto;padding:12px}.header{gap:8px}.logo img{width:135px}.logo h2{font-size:16px}.logo p{font-size:10px}
