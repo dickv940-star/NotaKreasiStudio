@@ -30,7 +30,7 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 .buttons{text-align:center;margin-top:20px}
 button{background:#c40000;color:white;border:0;padding:8px 12px;margin:5px;cursor:pointer;font-weight:bold;border-radius:4px}
 button:hover{filter:brightness(.92)}
-#btnHistory{background:#333}
+#btnHistory{background:#333}.history-rename{background:#e09b00}.history-count{font-size:12px;background:#eee;color:#555;padding:3px 8px;border-radius:20px;margin-left:6px}
 #toolbarEdit{display:none;text-align:center;margin:10px}
 #historyModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;padding:30px 15px;overflow:auto}
 .history-panel{max-width:760px;margin:30px auto;background:#fff;border-radius:10px;padding:20px;box-shadow:0 15px 45px rgba(0,0,0,.3)}
@@ -131,7 +131,7 @@ button:hover{filter:brightness(.92)}
 <div id="historyModal" aria-hidden="true">
   <div class="history-panel">
     <div class="history-head">
-      <h2>📋 Histori Nota</h2>
+      <h2>📋 Histori Nota <span id="historyCount" class="history-count">0</span></h2>
       <button class="history-close" onclick="closeHistory()">Tutup</button>
     </div>
     <div id="historyList" class="history-list"></div>
@@ -151,6 +151,7 @@ const sisa = document.getElementById("sisa");
 const HISTORY_KEY = "kreasiStudioNotaHistory";
 const MAX_HISTORY = 50;
 let historyTimer = null;
+let editingHistoryId = null;
 
 function formatAngka(n){return new Intl.NumberFormat("id-ID").format(Number(n))}
 function angka(v){return Number(String(v).replace(/\./g,"").replace(/[^0-9]/g,""))||0}
@@ -200,7 +201,8 @@ function snapshotNota(){
   }));
   const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll(".edit")].map(el=>el.innerHTML));
   return {
-    id:Date.now().toString(),
+    id:editingHistoryId || Date.now().toString(),
+    nama:"",
     savedAt:new Date().toISOString(),
     tanggal:tanggal.value,
     tanggalSelesai:tanggalSelesai.value,
@@ -212,7 +214,7 @@ function snapshotNota(){
   };
 }
 function hasNotaData(){
-  return !!(nota.innerText.trim() || tanggal.value || tanggalSelesai.value ||
+  return !!(nota.innerText.trim() || tanggalSelesai.value ||
     [...document.querySelectorAll("#bodyNota .edit")].some(el=>el.innerText.trim()) ||
     dp.innerText.trim());
 }
@@ -220,13 +222,16 @@ function saveCurrentToHistory(){
   if(!hasNotaData()) return;
   const data=snapshotNota();
   const items=getHistory();
-  const key=data.nomor || ("date:"+data.tanggal);
-  const existing=items.findIndex(x=>(x.nomor||("date:"+x.tanggal))===key);
+  let existing=editingHistoryId ? items.findIndex(x=>x.id===editingHistoryId) : -1;
+  if(existing<0 && data.nomor) existing=items.findIndex(x=>x.nomor===data.nomor);
   if(existing>=0){
     data.id=items[existing].id;
+    data.nama=items[existing].nama||data.nama;
     items.splice(existing,1);
   }
+  if(!data.nama) data.nama=data.nomor ? "Nota No. "+data.nomor : "Nota Baru";
   items.unshift(data);
+  editingHistoryId=data.id;
   setHistory(items);
 }
 function scheduleHistorySave(){
@@ -239,6 +244,7 @@ function formatTanggal(v){
   return d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"});
 }
 function openHistory(){
+  saveCurrentToHistory();
   renderHistory();
   const modal=document.getElementById("historyModal");
   modal.style.display="block";
@@ -252,6 +258,8 @@ function closeHistory(){
 function renderHistory(){
   const list=document.getElementById("historyList");
   const items=getHistory();
+  const count=document.getElementById("historyCount");
+  if(count)count.textContent=items.length;
   if(!items.length){
     list.innerHTML='<div class="history-empty">Belum ada nota tersimpan.<br>Nota akan tersimpan otomatis saat Anda mengisinya.</div>';
     return;
@@ -259,14 +267,15 @@ function renderHistory(){
   list.innerHTML="";
   items.forEach((item,index)=>{
     const firstDesc=(item.rows||[]).flat().find(v=>v&&v.replace(/<[^>]*>/g,"").trim());
-    const title=item.nomor?("Nota No. "+item.nomor):"Nota tanpa nomor";
+    const title=item.nama || (item.nomor?("Nota No. "+item.nomor):"Nota tanpa nomor");
     const meta=formatTanggal(item.tanggal)+(firstDesc?" • "+firstDesc.replace(/<[^>]*>/g,"").trim().slice(0,70):"");
     const row=document.createElement("div");
     row.className="history-item";
-    row.innerHTML='<div class="history-info"><div class="history-title"></div><div class="history-meta"></div></div><div class="history-actions"><button class="history-edit">Edit</button><button class="history-delete">Hapus</button></div>';
+    row.innerHTML='<div class="history-info"><div class="history-title"></div><div class="history-meta"></div></div><div class="history-actions"><button class="history-edit">Edit</button><button class="history-rename">Rename</button><button class="history-delete">Hapus</button></div>';
     row.querySelector(".history-title").textContent=title;
     row.querySelector(".history-meta").textContent=meta;
     row.querySelector(".history-edit").onclick=()=>loadHistory(index);
+    row.querySelector(".history-rename").onclick=()=>renameHistory(index);
     row.querySelector(".history-delete").onclick=()=>deleteHistory(index);
     list.appendChild(row);
   });
@@ -274,6 +283,7 @@ function renderHistory(){
 function loadHistory(index){
   const item=getHistory()[index];
   if(!item)return;
+  editingHistoryId=item.id;
   tanggal.value=item.tanggal||"";
   tanggalSelesai.value=item.tanggalSelesai||"";
   nota.innerHTML=item.nomor||"";
@@ -294,6 +304,19 @@ function loadHistory(index){
   closeHistory();
   scheduleHistorySave();
   window.scrollTo({top:0,behavior:"smooth"});
+}
+function renameHistory(index){
+  const items=getHistory();
+  const item=items[index];
+  if(!item)return;
+  const current=item.nama || (item.nomor ? "Nota No. "+item.nomor : "Nota tanpa nomor");
+  const nama=prompt("Masukkan nama nota:",current);
+  if(nama===null)return;
+  const trimmed=nama.trim();
+  if(!trimmed){alert("Nama nota tidak boleh kosong.");return;}
+  item.nama=trimmed;
+  setHistory(items);
+  renderHistory();
 }
 function deleteHistory(index){
   const items=getHistory();
@@ -333,6 +356,7 @@ function resetNota(){
   document.getElementById("lunasBox").style.display="none";
   nota.innerText="";
   document.getElementById("tanggalSelesai").value="";
+  editingHistoryId=null;
   document.querySelector(".edit")?.focus();
 }
 let deferredPrompt;
