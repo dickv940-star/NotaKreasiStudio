@@ -41,6 +41,10 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 #lunasBox{display:none;position:absolute;top:42%;left:52%;transform:translate(-50%,-50%) rotate(-12deg);z-index:9999;pointer-events:none}
 #lunasText{display:inline-block;padding:4px 18px;border:3px solid rgba(220,0,0,.28);color:rgba(220,0,0,.28);font-size:34px;font-weight:900;letter-spacing:3px;border-radius:6px;font-family:Arial,sans-serif}
 .buttons{text-align:center;margin-top:20px}
+.printer-tools{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+#printerStatus{font-size:13px;font-weight:bold;color:#777}
+#printerStatus.connected{color:#16803a}
+#printerStatus.error{color:#b00000}
 button{background:#c40000;color:white;border:0;padding:8px 12px;margin:5px;cursor:pointer;font-weight:bold;border-radius:4px}
 button:hover{filter:brightness(.92)}
 #btnHistory{background:#333}.history-rename{background:#e09b00}.history-count{font-size:12px;background:#eee;color:#555;padding:3px 8px;border-radius:20px;margin-left:6px}
@@ -141,6 +145,11 @@ button:hover{filter:brightness(.92)}
   <button onclick="installApp()">Install App</button>
   <button onclick="toggleEdit()">Edit Teks</button>
   <button id="btnHistory" onclick="openHistory()">📋 Histori</button>
+  <div class="printer-tools">
+    <button id="btnConnectPrinter" type="button">🔵 Hubungkan Printer</button>
+    <button id="btnPrintDirect" type="button">🖨 Cetak Langsung</button>
+    <span id="printerStatus">Printer belum terhubung</span>
+  </div>
 
   <div id="toolbarEdit">
     <button id="btnBoldCell" onclick="toggleBoldCell()"><b>B</b></button>
@@ -176,6 +185,7 @@ button:hover{filter:brightness(.92)}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="js/bluetooth.js?v=6.3.1"></script>
 <script>
 const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
@@ -186,6 +196,10 @@ const dp = document.getElementById("dp");
 const sisa = document.getElementById("sisa");
 
 const HISTORY_KEY = "kreasiStudioNotaHistory";
+const PRINTER_WIDTH_DOTS = 799;
+const PRINTER_HEIGHT_DOTS = 1199;
+const PRINTER_WIDTH_MM = 100;
+const PRINTER_HEIGHT_MM = 150;
 const COLUMN_WIDTHS_KEY = "kreasiStudioColumnWidths";
 const MAX_HISTORY = 50;
 let historyTimer = null;
@@ -433,7 +447,106 @@ function deleteHistory(index){
   renderHistory();
 }
 
-function downloadJPG(){
+
+function setPrinterStatus(text, type){
+  const el=document.getElementById("printerStatus");
+  if(!el)return;
+  el.textContent=text;
+  el.className=type||"";
+}
+function printerConnected(){
+  return !!(window.Bluetooth && typeof Bluetooth.isConnected==="function" && Bluetooth.isConnected());
+}
+async function connectPrinterNota(){
+  if(!window.Bluetooth){
+    setPrinterStatus("Bluetooth tidak tersedia","error");
+    alert("Engine Bluetooth tidak tersedia di browser ini.");
+    return false;
+  }
+  try{
+    setPrinterStatus("Menghubungkan...","");
+    let result;
+    if(typeof Bluetooth.connectUser==="function") result=await Bluetooth.connectUser();
+    else if(typeof Bluetooth.connect==="function") result=await Bluetooth.connect();
+    if(!printerConnected()) throw new Error("Printer belum terhubung.");
+    const name=(typeof Bluetooth.getDeviceName==="function"&&Bluetooth.getDeviceName())||"Printer";
+    setPrinterStatus("Terhubung: "+name,"connected");
+    return true;
+  }catch(e){
+    console.error("Koneksi printer:",e);
+    setPrinterStatus("Belum terhubung","error");
+    if(e.name!=="AbortError"&&e.name!=="NotFoundError")alert("Gagal menghubungkan printer: "+(e.message||e));
+    return false;
+  }
+}
+function canvasToMonoBitmap(canvas,width,height){
+  const src=canvas.getContext("2d").getImageData(0,0,canvas.width,canvas.height).data;
+  const out=new Uint8Array(Math.ceil(width/8)*height);
+  const srcW=canvas.width, srcH=canvas.height;
+  for(let y=0;y<height;y++){
+    const sy=Math.min(srcH-1,Math.floor(y*srcH/height));
+    for(let x=0;x<width;x++){
+      const sx=Math.min(srcW-1,Math.floor(x*srcW/width));
+      const i=(sy*srcW+sx)*4;
+      const lum=(src[i]*299+src[i+1]*587+src[i+2]*114)/1000;
+      if(lum<160) out[y*Math.ceil(width/8)+(x>>3)]|=(0x80>>(x&7));
+    }
+  }
+  return out;
+}
+function asciiBytes(text){return new TextEncoder().encode(text)}
+function joinBytes(a,b,c){
+  const out=new Uint8Array(a.length+b.length+c.length);
+  out.set(a,0);out.set(b,a.length);out.set(c,a.length+b.length);return out;
+}
+async function buildNotaBitmap(){
+  const noExport=notaArea.querySelectorAll(".no-export");
+  const old=[];
+  noExport.forEach((el,i)=>{old[i]=el.style.display;el.style.display="none"});
+  try{
+    const source=await html2canvas(notaArea,{scale:2,useCORS:true,allowTaint:false,backgroundColor:"#fff",logging:false});
+    const target=document.createElement("canvas");
+    target.width=PRINTER_WIDTH_DOTS; target.height=PRINTER_HEIGHT_DOTS;
+    const ctx=target.getContext("2d");
+    ctx.fillStyle="#fff";ctx.fillRect(0,0,target.width,target.height);
+    const scale=Math.min(target.width/source.width,target.height/source.height);
+    const w=Math.max(1,Math.floor(source.width*scale));
+    const h=Math.max(1,Math.floor(source.height*scale));
+    const x=Math.floor((target.width-w)/2);
+    const y=0;
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(source,0,0,source.width,source.height,x,y,w,h);
+    return canvasToMonoBitmap(target,PRINTER_WIDTH_DOTS,PRINTER_HEIGHT_DOTS);
+  }finally{
+    noExport.forEach((el,i)=>el.style.display=old[i]);
+  }
+}
+async function printNotaDirect(){
+  saveCurrentToHistory();
+  if(!printerConnected()){
+    const ok=await connectPrinterNota();
+    if(!ok)return;
+  }
+  const btn=document.getElementById("btnPrintDirect");
+  if(btn)btn.disabled=true;
+  setPrinterStatus("Menyiapkan nota...","");
+  try{
+    const bitmap=await buildNotaBitmap();
+    const header=asciiBytes("SIZE 100 mm,150 mm\r\nGAP 2 mm,0 mm\r\nCLS\r\nBITMAP 0,0,799,1199,0,");
+    const footer=asciiBytes("\r\nPRINT 1,1\r\n");
+    const raw=joinBytes(header,bitmap,footer);
+    setPrinterStatus("Mengirim ke printer...","");
+    await Bluetooth.sendRaw(raw);
+    setPrinterStatus("Terkirim ke printer","connected");
+  }catch(e){
+    console.error("Cetak langsung:",e);
+    setPrinterStatus("Cetak gagal","error");
+    alert("Cetak langsung gagal: "+(e.message||e));
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+
   saveCurrentToHistory();
   const noExport=notaArea.querySelectorAll(".no-export");
   const originalDisplay=[];
@@ -555,6 +668,16 @@ if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
   tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td>';
   document.getElementById("bodyNota").appendChild(tr);
   tr.querySelector(".edit").focus();hitung();scheduleHistorySave();
+});
+
+document.getElementById("btnConnectPrinter")?.addEventListener("click",connectPrinterNota);
+document.getElementById("btnPrintDirect")?.addEventListener("click",printNotaDirect);
+window.addEventListener("smartprint-bluetooth-connected",e=>{
+  const d=e.detail||{};
+  setPrinterStatus("Terhubung: "+(d.name||"Printer"),"connected");
+});
+window.addEventListener("smartprint-bluetooth-disconnected",()=>{
+  setPrinterStatus("Printer terputus","error");
 });
 window.addEventListener("beforeunload",saveCurrentToHistory);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeHistory()});
