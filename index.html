@@ -156,9 +156,12 @@ button:hover{filter:brightness(.92)}
     </label>
     <label class="edit-toolbar-control">Warna <input id="fontColor" type="color" value="#000000" onchange="applyFontColor(this.value)"></label>
     <button onclick="cmd('italic')"><i>I</i></button>
-    <button onclick="cmd('justifyLeft')">⬅</button>
-    <button onclick="cmd('justifyCenter')">⬤</button>
-    <button onclick="cmd('justifyRight')">➡</button>
+    
+    <button onclick="applyTextDecoration('underline')" title="Garis bawah"><u>U</u></button>
+    <button onclick="applyTextDecoration('line-through')" title="Coret"><s>S</s></button>
+    <button onclick="applyTextAlign('left')" title="Rata kiri">⬅</button>
+    <button onclick="applyTextAlign('center')" title="Rata tengah">⬤</button>
+    <button onclick="applyTextAlign('right')" title="Rata kanan">➡</button>
   </div>
 </div>
 
@@ -491,6 +494,18 @@ function applyFontSize(value){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
   const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diubah.");return}
   el.style.fontSize=value; saveCurrentToHistory();
+}
+function applyTextAlign(value){
+  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diatur.");return}
+  el.style.textAlign=value; saveCurrentToHistory();
+}
+function applyTextDecoration(value){
+  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diatur.");return}
+  const current=el.style.textDecoration;
+  el.style.textDecoration=current===value?"none":value;
+  saveCurrentToHistory();
 }
 function applyFontColor(value){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
