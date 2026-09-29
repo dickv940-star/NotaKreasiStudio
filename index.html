@@ -96,7 +96,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V3 -->
+  <!-- NOTA_PRINT_UI_V4 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -740,11 +740,11 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape") closePrintChoiceModal();
 });
 document.getElementById("btnPrintLabel")?.addEventListener("click",async()=>{
-  printOptions?.classList.remove("show");
+  closePrintChoiceModal();
   await printNotaDirect();
 });
 document.getElementById("btnPrintEpson")?.addEventListener("click",()=>{
-  printOptions?.classList.remove("show");
+  closePrintChoiceModal();
   window.print();
 });
 hitung();
