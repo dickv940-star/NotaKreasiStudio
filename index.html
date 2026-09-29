@@ -129,7 +129,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V13_COM_DIRECT_PREVIEW_20260929_8 -->
+  <!-- NOTA_PRINT_UI_V14_COM_PICKER_VISIBLE_PREVIEW_20260929_9 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -243,8 +243,20 @@ button:hover{filter:brightness(.92)}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-5"></script>
-<script src="js/bluetooth.js?v=20260929-5"></script>
+  <div id="labelPreviewModal" class="label-preview-modal" aria-hidden="true">
+    <div class="label-preview-card" role="dialog" aria-modal="true" aria-labelledby="labelPreviewTitle">
+      <h3 id="labelPreviewTitle">Preview Nota</h3>
+      <p id="labelPreviewStatus">Printer tersambung. Periksa nota sebelum mencetak.</p>
+      <canvas id="labelPreviewCanvas" width="799" height="1199" aria-label="Canvas preview nota sebelum dicetak"></canvas>
+      <div class="label-preview-actions">
+        <button id="btnConfirmLabelPrint" type="button">🖨️ Print</button>
+        <button id="btnCancelLabelPrint" class="label-preview-cancel" type="button">Batal</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-6"></script>
+<script src="js/bluetooth.js?v=20260929-6"></script>
 <script>
 const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
@@ -537,9 +549,11 @@ function deleteHistory(index){
 
 function setPrinterStatus(text, type){
   const el=document.getElementById("printerStatus");
-  if(!el)return;
-  el.textContent=text;
-  el.className=type||"";
+  const choice=document.getElementById("printStatus");
+  const preview=document.getElementById("labelPreviewStatus");
+  if(el){el.textContent=text;el.className=type||""}
+  if(choice){choice.textContent=text;choice.className="print-status "+(type||"")}
+  if(preview){preview.textContent=text}
 }
 function printerConnected(){
   return !!(window.Bluetooth && typeof Bluetooth.isConnected==="function" && Bluetooth.isConnected());
@@ -666,22 +680,57 @@ async function sendPendingLabelPrint(){
 }
 async function printNotaDirect(){
   saveCurrentToHistory();
-  if(!printerConnected()){
-    let ok=false;
-    if(window.Bluetooth && typeof Bluetooth.connectSerial==="function"){
-      setPrinterStatus("Pilih port COM printer (misalnya COM3)...","");
-      ok=await Bluetooth.connectSerial({baudRate:9600});
-    }
-    if(!ok){setPrinterStatus("Printer belum terhubung","error");return;}
+
+  const choice=document.getElementById("printModal");
+  const choiceStatus=document.getElementById("printStatus");
+  const setChoice=(text,type)=>{
+    if(choiceStatus){choiceStatus.textContent=text;choiceStatus.className="print-status "+(type||"")}
+    setPrinterStatus(text,type);
+  };
+
+  // Pastikan pengguna melihat proses, bukan tombol menghilang tanpa pesan.
+  if(choice){
+    choice.classList.add("show");
+    choice.setAttribute("aria-hidden","false");
   }
-  setPrinterStatus("Menyiapkan preview...","");
+
+  if(!printerConnected()){
+    if(!window.Bluetooth || typeof Bluetooth.connectSerial!=="function"){
+      setChoice("Web Serial / COM printer tidak tersedia di browser ini.","error");
+      alert("Web Serial tidak tersedia. Gunakan Google Chrome/Edge di Windows.");
+      return;
+    }
+
+    setChoice("Pilih port COM printer (misalnya COM3) pada jendela Chrome...","");
+    let ok=false;
+    try{
+      // requestPort() harus dipanggil langsung dari aksi klik pengguna.
+      ok=await Bluetooth.connectSerial({baudRate:9600});
+    }catch(e){
+      console.error("COM printer:",e);
+      setChoice("Gagal membuka port COM: "+(e.message||e),"error");
+      alert("Port COM printer gagal dibuka.\n\n"+(e.message||e)+"\n\nPastikan printer tidak sedang dipakai aplikasi lain.");
+      return;
+    }
+
+    if(!ok || !printerConnected()){
+      setChoice("Printer COM belum terhubung.","error");
+      return;
+    }
+  }
+
+  setChoice("COM printer terhubung. Menyiapkan canvas preview...","ok");
+
   try{
     const job=await buildNotaBitmap();
     pendingLabelPrint=job;
+    closePrintChoiceModal();
     openLabelPreview(job.previewUrl);
-    setPrinterStatus("Preview siap. Klik Print untuk mencetak.","ok");
+    setPrinterStatus("Preview siap. Periksa nota lalu klik Print.","ok");
   }catch(e){
-    console.error("Preview/cetak:",e);setPrinterStatus("Gagal membuat preview","error");alert("Gagal membuat preview: "+(e.message||e));
+    console.error("Preview/cetak:",e);
+    setChoice("Gagal membuat preview","error");
+    alert("Gagal membuat preview: "+(e.message||e));
   }
 }
 
@@ -842,15 +891,12 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape") closePrintChoiceModal();
 });
 document.getElementById("btnPrintLabel")?.addEventListener("click",async()=>{
-  closePrintChoiceModal();
   await printNotaDirect();
 });
-document.addEventListener("DOMContentLoaded",()=>{
-  document.getElementById("btnConfirmLabelPrint")?.addEventListener("click",sendPendingLabelPrint);
-  document.getElementById("btnCancelLabelPrint")?.addEventListener("click",closeLabelPreview);
-  document.getElementById("labelPreviewModal")?.addEventListener("click",e=>{
-    if(e.target.id==="labelPreviewModal")closeLabelPreview();
-  });
+document.getElementById("btnConfirmLabelPrint")?.addEventListener("click",sendPendingLabelPrint);
+document.getElementById("btnCancelLabelPrint")?.addEventListener("click",closeLabelPreview);
+document.getElementById("labelPreviewModal")?.addEventListener("click",e=>{
+  if(e.target.id==="labelPreviewModal")closeLabelPreview();
 });
 document.getElementById("btnPrintEpson")?.addEventListener("click",()=>{
   closePrintChoiceModal();
@@ -875,16 +921,5 @@ if("serviceWorker" in navigator){
 <!-- NOTA_EDIT_SELECTION_FIX_V3_CACHE_20260929_3 -->
 <!-- NOTA_EDIT_SELECTION_FIX_V2 -->
 
-  <div id="labelPreviewModal" class="label-preview-modal" aria-hidden="true">
-    <div class="label-preview-card" role="dialog" aria-modal="true" aria-labelledby="labelPreviewTitle">
-      <h3 id="labelPreviewTitle">Preview Nota</h3>
-      <p id="labelPreviewStatus">Printer tersambung. Periksa nota sebelum mencetak.</p>
-      <canvas id="labelPreviewCanvas" width="799" height="1199" aria-label="Canvas preview nota sebelum dicetak"></canvas>
-      <div class="label-preview-actions">
-        <button id="btnConfirmLabelPrint" type="button">🖨️ Print</button>
-        <button id="btnCancelLabelPrint" class="label-preview-cancel" type="button">Batal</button>
-      </div>
-    </div>
-  </div>
 </body>
 </html>
