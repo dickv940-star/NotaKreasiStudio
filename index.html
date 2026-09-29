@@ -259,7 +259,7 @@ button:hover{filter:brightness(.92)}
       <div class="label-position-controls">
         <label>X (dot)<input id="labelPosX" type="number" min="0" max="798" step="1" value="0"></label>
         <label>Y (dot)<input id="labelPosY" type="number" min="0" max="1198" step="1" value="0"></label>
-        <label>Skala<input id="labelScale" type="number" min="10" max="100" step="1" value="100"></label>
+        <label>Skala<input id="labelScale" type="range" min="10" max="100" step="1" value="100"></label>
         <button id="btnResetLabelPosition" type="button">↺ Reset</button>
       </div>
       <div class="label-drag-help">Drag / geser nota langsung pada preview. X dan Y menggunakan satuan dot printer 799×1199.</div>
@@ -271,7 +271,7 @@ button:hover{filter:brightness(.92)}
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-8"></script>
-<script src="js/bluetooth.js?v=20260929-15"></script>
+<script src="js/bluetooth.js?v=20260929-16"></script>
 <script>
 const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
@@ -701,53 +701,70 @@ function setupLabelPositionControls(){
   const xEl=document.getElementById("labelPosX"), yEl=document.getElementById("labelPosY"), sEl=document.getElementById("labelScale");
   const reset=document.getElementById("btnResetLabelPosition");
   if(!canvas||!pendingLabelPrint)return;
-  const job=pendingLabelPrint;
+  const redraw=()=>{ const job=pendingLabelPrint; if(!job)return; renderLabelJob(job); canvas.getContext("2d").drawImage(job.renderCanvas,0,0); };
   const apply=()=>{
+    const job=pendingLabelPrint; if(!job)return;
     const requestedScale=Math.max(.1,Math.min(1,Number(sEl?.value||100)/100));
     const newW=Math.max(1,Math.round(job.w*requestedScale));
     const newH=Math.max(1,Math.round(job.h*requestedScale));
     job.scale=requestedScale;
-    job.x=Math.max(0,Math.min(Number(xEl?.value||0),PRINTER_WIDTH_DOTS-newW));
-    job.y=Math.max(0,Math.min(Number(yEl?.value||0),PRINTER_HEIGHT_DOTS-newH));
     job.maxX=Math.max(0,PRINTER_WIDTH_DOTS-newW); job.maxY=Math.max(0,PRINTER_HEIGHT_DOTS-newH);
-    renderLabelJob(job);
-    canvas.getContext("2d").drawImage(job.renderCanvas,0,0);
+    job.x=Math.max(0,Math.min(Number(xEl?.value||0),job.maxX));
+    job.y=Math.max(0,Math.min(Number(yEl?.value||0),job.maxY));
+    redraw();
   };
-  [xEl,yEl,sEl].forEach(el=>el&&el.addEventListener("change",apply));
+  [xEl,yEl,sEl].forEach(el=>{
+    if(!el)return;
+    el.oninput=apply;
+    el.onchange=apply;
+  });
   if(reset)reset.onclick=()=>{
+    const job=pendingLabelPrint; if(!job)return;
     job.scale=1; job.x=Math.floor((PRINTER_WIDTH_DOTS-job.w)/2); job.y=0;
-    renderLabelJob(job); canvas.getContext("2d").drawImage(job.renderCanvas,0,0);
+    if(xEl)xEl.value=Math.round(job.x); if(yEl)yEl.value=0; if(sEl)sEl.value=100;
+    redraw();
   };
+
   const point=e=>{
     const r=canvas.getBoundingClientRect();
-    const sx=PRINTER_WIDTH_DOTS/r.width, sy=PRINTER_HEIGHT_DOTS/r.height;
-    return {x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};
+    return {
+      x:(e.clientX-r.left)*(PRINTER_WIDTH_DOTS/r.width),
+      y:(e.clientY-r.top)*(PRINTER_HEIGHT_DOTS/r.height)
+    };
   };
-  const down=e=>{
-    if(e.button!==undefined && e.button!==0)return;
-    e.preventDefault(); canvas.setPointerCapture?.(e.pointerId);
-    const p=point(e); labelDragState={pointerId:e.pointerId,startX:p.x,startY:p.y,origX:job.x,origY:job.y};
+  canvas.onpointerdown=e=>{
+    if(e.button!==undefined&&e.button!==0)return;
+    const job=pendingLabelPrint; if(!job)return;
+    e.preventDefault();
+    canvas.setPointerCapture?.(e.pointerId);
+    const p=point(e);
+    labelDragState={pointerId:e.pointerId,startX:p.x,startY:p.y,origX:job.x,origY:job.y};
     canvas.classList.add("dragging");
   };
-  const move=e=>{
+  canvas.onpointermove=e=>{
     if(!labelDragState)return;
+    const job=pendingLabelPrint; if(!job){labelDragState=null;return;}
+    e.preventDefault();
     const p=point(e);
+    const newW=Math.round(job.w*job.scale), newH=Math.round(job.h*job.scale);
+    job.maxX=Math.max(0,PRINTER_WIDTH_DOTS-newW); job.maxY=Math.max(0,PRINTER_HEIGHT_DOTS-newH);
     job.x=Math.round(Math.max(0,Math.min(job.maxX,labelDragState.origX+(p.x-labelDragState.startX))));
     job.y=Math.round(Math.max(0,Math.min(job.maxY,labelDragState.origY+(p.y-labelDragState.startY))));
-    renderLabelJob(job);
-    canvas.getContext("2d").drawImage(job.renderCanvas,0,0);
+    if(xEl)xEl.value=job.x; if(yEl)yEl.value=job.y;
+    redraw();
   };
-  const up=e=>{
-    if(!labelDragState)return;
-    labelDragState=null; canvas.classList.remove("dragging");
+  const stop=()=>{labelDragState=null;canvas.classList.remove("dragging")};
+  canvas.onpointerup=stop;
+  canvas.onpointercancel=stop;
+  canvas.onlostpointercapture=stop;
+  canvas.onwheel=e=>{
+    if(!pendingLabelPrint)return;
+    e.preventDefault();
+    const current=Math.round((pendingLabelPrint.scale||1)*100);
+    const next=Math.max(10,Math.min(100,current+(e.deltaY<0?5:-5)));
+    if(sEl)sEl.value=next;
+    apply();
   };
-  if(!canvas.dataset.dragReady){
-    canvas.dataset.dragReady="1";
-    canvas.addEventListener("pointerdown",down);
-    canvas.addEventListener("pointermove",move);
-    canvas.addEventListener("pointerup",up);
-    canvas.addEventListener("pointercancel",up);
-  }
 }
 function closeLabelPreview(){
   const modal=document.getElementById("labelPreviewModal");
