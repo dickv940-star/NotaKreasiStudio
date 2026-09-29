@@ -197,7 +197,7 @@ button:hover{filter:brightness(.92)}
     
     <button onclick="applyTextDecoration('underline')" title="Garis bawah"><u>U</u></button>
     <button onclick="applyTextDecoration('line-through')" title="Coret"><s>S</s></button>
-    <button type="button" onclick="selectAllEditables()" title="Pilih semua">☷ Semua</button><span id="editSelectionInfo">Pilih 1 atau beberapa sel untuk diedit</span>
+    <button type="button" onclick="selectAllEditables()" title="Blok semua">☷ Blok Semua</button><span id="editSelectionInfo">Pilih 1 atau beberapa sel untuk diedit</span>
     <button onclick="applyTextAlign('left')" title="Rata kiri">⬅</button>
     <button onclick="applyTextAlign('center')" title="Rata tengah">⬤</button>
     <button onclick="applyTextAlign('right')" title="Rata kanan">➡</button>
@@ -673,48 +673,47 @@ function toggleEdit(){
 function getEditableTargets(){
   return [...document.querySelectorAll('#notaArea [contenteditable="true"],#notaArea .jumlah,#notaArea #total,#notaArea #dp,#notaArea #sisa')];
 }
+function getRangeSelectedTargets(){
+  const sel=window.getSelection();
+  if(!sel || sel.rangeCount===0 || sel.isCollapsed)return [];
+  const range=sel.getRangeAt(0);
+  return getEditableTargets().filter(el=>{
+    try{return range.intersectsNode(el)}catch(e){return false}
+  });
+}
 function getSelectedEditable(){
+  const targets=getRangeSelectedTargets();
+  if(targets.length)return targets[0];
   const active=document.activeElement;
   if(active&&active.matches("[contenteditable='true'],.jumlah,#total,#dp,#sisa"))return active;
-  const sel=window.getSelection();
-  const node=sel?.anchorNode?.parentElement;
-  return node?.closest('[contenteditable="true"],.jumlah,#total,#dp,#sisa')||null;
+  return null;
 }
 function getSelectedEditables(){
-  const marked=[...document.querySelectorAll('#notaArea .edit-selected')];
-  if(marked.length)return marked;
-  const all=getEditableTargets(),sel=window.getSelection();
-  if(sel&&!sel.isCollapsed&&sel.rangeCount){
-    const range=sel.getRangeAt(0);
-    const hit=all.filter(el=>{try{return range.intersectsNode(el)}catch(e){return false}});
-    if(hit.length)return hit;
-  }
-  const one=getSelectedEditable();
-  return one?[one]:[];
+  const rangeTargets=getRangeSelectedTargets();
+  if(rangeTargets.length)return rangeTargets;
+  const active=getSelectedEditable();
+  return active?[active]:[];
 }
 function updateEditSelectionInfo(){
   const info=document.getElementById("editSelectionInfo");
   if(!info)return;
   const n=getSelectedEditables().length;
-  info.textContent=n>1?(n+" sel dipilih"):(n===1?"1 sel dipilih":"Pilih 1 atau beberapa sel untuk diedit");
+  info.textContent=n>1?(n+" bagian diblok"):(n===1?"1 bagian diblok":"Blok tulisan/sel yang ingin diedit");
 }
 document.addEventListener("selectionchange",updateEditSelectionInfo);
 function selectAllEditables(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  getEditableTargets().forEach(el=>el.classList.add("edit-selected"));
+  const first=getEditableTargets()[0];
+  const last=getEditableTargets().at(-1);
+  if(!first||!last)return;
+  const range=document.createRange();
+  range.setStart(first,0);
+  range.setEnd(last,last.childNodes.length);
+  const sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
   updateEditSelectionInfo();
 }
-document.addEventListener("click",function(e){
-  if(!editMode)return;
-  const el=e.target.closest('#notaArea [contenteditable="true"],#notaArea .jumlah,#notaArea #total,#notaArea #dp,#notaArea #sisa');
-  if(!el)return;
-  if(e.ctrlKey||e.metaKey) el.classList.toggle("edit-selected");
-  else {
-    document.querySelectorAll('#notaArea .edit-selected').forEach(x=>x.classList.remove("edit-selected"));
-    el.classList.add("edit-selected");
-  }
-  updateEditSelectionInfo();
-});
 function applyToSelected(fn,msg){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
   const els=getSelectedEditables();
@@ -722,15 +721,15 @@ function applyToSelected(fn,msg){
   els.forEach(fn);
   saveCurrentToHistory();
 }
-function applyFontFamily(value){applyToSelected(el=>el.style.fontFamily=value,"Pilih tulisan yang ingin diubah.")}
-function applyFontSize(value){applyToSelected(el=>el.style.fontSize=value,"Pilih tulisan yang ingin diubah.")}
-function applyTextAlign(value){applyToSelected(el=>el.style.textAlign=value,"Pilih tulisan yang ingin diatur.")}
-function applyTextDecoration(value){applyToSelected(el=>{el.style.textDecoration=el.style.textDecoration===value?"none":value},"Pilih tulisan yang ingin diatur.")}
-function applyFontColor(value){applyToSelected(el=>el.style.color=value,"Pilih tulisan yang ingin diubah.")}
+function applyFontFamily(value){applyToSelected(el=>el.style.fontFamily=value,"Blok tulisan yang ingin diubah.")}
+function applyFontSize(value){applyToSelected(el=>el.style.fontSize=value,"Blok tulisan yang ingin diubah.")}
+function applyTextAlign(value){applyToSelected(el=>el.style.textAlign=value,"Blok sel yang ingin diatur.")}
+function applyTextDecoration(value){applyToSelected(el=>el.style.textDecoration=el.style.textDecoration===value?"none":value,"Blok tulisan yang ingin diatur.")}
+function applyFontColor(value){applyToSelected(el=>el.style.color=value,"Blok tulisan yang ingin diubah.")}
 function toggleBoldCell(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
   const els=getSelectedEditables();
-  if(!els.length){alert("Pilih tulisan yang ingin dibuat Bold.");return}
+  if(!els.length){alert("Blok tulisan yang ingin dibuat Bold.");return}
   els.forEach(el=>el.classList.toggle("bold-cell"));
   saveCurrentToHistory();
 }
