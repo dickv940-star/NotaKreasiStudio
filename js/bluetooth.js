@@ -37,7 +37,7 @@
 
     "use strict";
 
-    const VERSION = "6.3.1";
+    const VERSION = "6.3.2";
 
     let device = null;
     let server = null;
