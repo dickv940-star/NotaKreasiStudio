@@ -680,6 +680,11 @@ function isEditableTextNode(node){
 }
 
 function rememberEditSelection(){
+  const active=document.activeElement;
+  if(active && active.matches('#notaArea .edit[contenteditable="true"], #nota[contenteditable="true"], #dp[contenteditable="true"]') && !window.getSelection()?.toString()){
+    bulkEditSelection=false;
+    document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
+  }
   const sel=window.getSelection();
   if(!sel || sel.rangeCount===0 || sel.isCollapsed)return;
   bulkEditSelection=false;
@@ -740,7 +745,7 @@ function updateEditSelectionInfo(){
 
 function selectAllEditables(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  const editable=[...document.querySelectorAll('#notaArea [contenteditable="true"]')];
+  const editable=[...document.querySelectorAll('#notaArea .edit[contenteditable="true"], #nota[contenteditable="true"], #dp[contenteditable="true"]')];
   const nonEmpty=editable.filter(el=>(el.innerText||el.textContent||"").trim()!=="");
   if(!nonEmpty.length){
     alert("Belum ada tulisan yang Anda ketik untuk diblok.");
@@ -871,16 +876,6 @@ nota?.addEventListener("blur",()=>{
   if(!isNaN(manual)){lastNota=manual;localStorage.setItem("lastNota",lastNota)}
   saveCurrentToHistory();
 });
-function cmd(command){document.execCommand(command,false,null)}
-function toggleBoldCell(){
-  const sel=window.getSelection();
-  let el=sel&&sel.anchorNode?sel.anchorNode.parentElement:null;
-  if(el && !el.closest("[contenteditable='true']"))el=null;
-  const active=el?el.closest("[contenteditable='true']"):document.activeElement;
-  if(!active || !active.matches("[contenteditable='true']")){alert("Pilih atau klik tulisan di kolom yang ingin dibuat Bold.");return}
-  active.classList.toggle("bold-cell");
-  saveCurrentToHistory();
-}
 const btnTambahBaris=document.getElementById("btnTambahBaris");
 if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
   const tr=document.createElement("tr");
