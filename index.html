@@ -30,6 +30,8 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 .edit[contenteditable="true"]{font-weight:normal}
 .edit[contenteditable="true"].bold-cell{font-weight:700}
 #notaArea.edit-mode [contenteditable="true"]{cursor:text}
+#total,#sisa{cursor:text}
+#total.bold-cell,#dp.bold-cell,#sisa.bold-cell{font-weight:700}
 #toolbarEdit{display:none;text-align:center;margin:10px}
 #toolbarEdit button.active{outline:2px solid #000;outline-offset:1px}
 .footer{display:flex}.warning{width:60%;padding:12px}.warning h2{color:red}.warning h3{font-size:13px;font-weight:normal;margin-top:20px}
@@ -273,7 +275,7 @@ function snapshotNota(){
     selector:el.id?("#"+el.id):null,
     html:el.innerHTML
   }));
-  const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll("td[contenteditable=\"true\"]")].map(el=>el.innerHTML));
+  const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll("td[contenteditable=\"true\"]")].map(el=>({html:el.innerHTML,bold:el.classList.contains("bold-cell")})));
   return {
     id:editingHistoryId || Date.now().toString(),
     nama:"",
@@ -284,7 +286,10 @@ function snapshotNota(){
     cells,
     rows,
     dp:dp.innerHTML,
-    lunas:document.getElementById("lunasBox").style.display==="block"
+    dpBold:dp.classList.contains("bold-cell"),
+    lunas:document.getElementById("lunasBox").style.display==="block",
+    totalBold:total.classList.contains("bold-cell"),
+    sisaBold:sisa.classList.contains("bold-cell")
   };
 }
 function hasNotaData(){
@@ -366,15 +371,18 @@ function loadHistory(index){
   (item.rows||[]).forEach(rowData=>{
     const tr=document.createElement("tr");
     tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="edit jumlah" contenteditable="true"></td>';
-    tr.querySelectorAll(".edit").forEach((el,i)=>el.innerHTML=rowData[i]||"");
+    tr.querySelectorAll(".edit").forEach((el,i)=>{const v=rowData[i]; el.innerHTML=typeof v==="object"?(v.html||""):(v||""); if(typeof v==="object"&&v.bold)el.classList.add("bold-cell");});
     tbody.appendChild(tr);
   });
   if(!item.rows || !item.rows.length){
     document.getElementById("btnTambahBaris").click();
   }
   dp.innerHTML=item.dp||"";
+  if(item.dpBold)dp.classList.add("bold-cell"); else dp.classList.remove("bold-cell");
   document.getElementById("lunasBox").style.display=item.lunas?"block":"none";
   hitung();
+  total.classList.toggle("bold-cell",!!item.totalBold);
+  sisa.classList.toggle("bold-cell",!!item.sisaBold);
   closeHistory();
   scheduleHistorySave();
   window.scrollTo({top:0,behavior:"smooth"});
@@ -453,7 +461,17 @@ function toggleBoldCell(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
   const active=document.activeElement;
   const cell=active&&active.matches("[contenteditable='true']")?active:window.getSelection()?.anchorNode?.parentElement?.closest("[contenteditable='true']");
-  if(!cell){alert("Klik teks pada kolom yang ingin dibuat Bold.");return}
+  if(!cell){
+    const node=window.getSelection()?.anchorNode?.parentElement;
+    const special=node?.closest("#total,#dp,#sisa");
+    if(special && notaArea.contains(special)){
+      special.classList.toggle("bold-cell");
+      document.getElementById("btnBoldCell")?.classList.toggle("active",special.classList.contains("bold-cell"));
+      saveCurrentToHistory();
+      return;
+    }
+    alert("Klik teks pada kolom yang ingin dibuat Bold.");return
+  }
   cell.classList.toggle("bold-cell");
   document.getElementById("btnBoldCell")?.classList.toggle("active",cell.classList.contains("bold-cell"));
   saveCurrentToHistory();
