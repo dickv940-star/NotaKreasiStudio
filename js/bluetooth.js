@@ -37,7 +37,7 @@
 
     "use strict";
 
-    const VERSION = "6.3.2";
+    const VERSION = "6.3.6";
 
     let device = null;
     let server = null;
@@ -47,6 +47,25 @@
     let serialPort = null;
     let serialWriter = null;
     let serialWriteQueue = Promise.resolve();
+    let serialChannel = null;
+    const SERIAL_CHANNEL_NAME = "NotaKreasiStudio-Serial-Lock-v1";
+
+    try {
+        if (typeof BroadcastChannel !== "undefined") {
+            serialChannel = new BroadcastChannel(SERIAL_CHANNEL_NAME);
+            serialChannel.onmessage = async function(event) {
+                const data = event && event.data ? event.data : {};
+                if (data.type !== "release-request") return;
+                if (!serialPort) return;
+                log("Tab lain meminta pelepasan COM printer.");
+                try { await disconnectSerial("remote-release"); } catch (e) {
+                    warn("Gagal melepas COM untuk tab lain:", e);
+                }
+            };
+        }
+    } catch (e) {
+        serialChannel = null;
+    }
 
     let bridgeConnected = false;
     let connecting = false;
@@ -1948,6 +1967,21 @@
         /* Jangan membuat sesi COM paralel jika port lama masih aktif. */
 
         try {
+            /*
+             * Beri kesempatan tab NotaKreasiStudio lain yang masih aktif
+             * melepas COM printer. Ini mencegah "Failed to open serial port"
+             * saat pengguna membuka aplikasi di tab baru.
+             */
+            if (serialChannel) {
+                try {
+                    serialChannel.postMessage({
+                        type: "release-request",
+                        at: Date.now()
+                    });
+                    await sleep(120);
+                } catch (e) {}
+            }
+
             log("========================================");
             log("BLUETOOTH CLASSIC / SERIAL DISCOVERY");
             log("Mode: Windows COM / Bluetooth SPP");
@@ -2587,7 +2621,7 @@
     =====================================================
     */
 
-    async function disconnectSerial() {
+    async function disconnectSerial(reason) {
 
         try {
 
@@ -2629,7 +2663,8 @@
         }
 
         dispatch("disconnected", {
-            type: "SERIAL"
+            type: "SERIAL",
+            reason: reason || "user"
         });
 
         dispatch("status", {
@@ -2677,6 +2712,23 @@
 
     }
 
+
+    try {
+        if (typeof window !== "undefined") {
+            window.addEventListener("pagehide", function() {
+                try {
+                    if (serialChannel) serialChannel.postMessage({ type: "release-request", at: Date.now() });
+                } catch (e) {}
+                try {
+                    if (serialPort) {
+                        const p = serialPort;
+                        serialPort = null;
+                        if (p.readable || p.writable) p.close().catch(() => {});
+                    }
+                } catch (e) {}
+            });
+        }
+    } catch (e) {}
 
     /*
     =====================================================
