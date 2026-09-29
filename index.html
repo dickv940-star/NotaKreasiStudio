@@ -135,7 +135,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_FIX_V21_COM_LOCK_4B2084A_TSPL_20260929_17 -->
+  <!-- NOTA_PRINT_FIX_V22_PREVIEW_POSITION_TO_PRINT_20260929 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -666,16 +666,35 @@ function renderLabelJob(job){
   const canvas=job.renderCanvas || document.createElement("canvas");
   canvas.width=PRINTER_WIDTH_DOTS; canvas.height=PRINTER_HEIGHT_DOTS;
   const ctx=canvas.getContext("2d");
-  ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(job.sourceCanvas,0,0,job.sourceCanvas.width,job.sourceCanvas.height,Math.round(job.x),Math.round(job.y),Math.round(job.w*job.scale),Math.round(job.h*job.scale));
-  job.x=Math.max(0,Math.min(job.x,PRINTER_WIDTH_DOTS-Math.round(job.w*job.scale)));
-  job.y=Math.max(0,Math.min(job.y,PRINTER_HEIGHT_DOTS-Math.round(job.h*job.scale)));
+
+  // Selalu hitung batas dari ukuran AKHIR sebelum menggambar.
+  // Dengan begitu posisi yang dipilih di preview adalah posisi yang
+  // benar-benar masuk ke raster yang dikirim ke printer.
+  const finalW=Math.max(1,Math.min(PRINTER_WIDTH_DOTS,Math.round(job.w*job.scale)));
+  const finalH=Math.max(1,Math.min(PRINTER_HEIGHT_DOTS,Math.round(job.h*job.scale)));
+  job.maxX=Math.max(0,PRINTER_WIDTH_DOTS-finalW);
+  job.maxY=Math.max(0,PRINTER_HEIGHT_DOTS-finalH);
+  job.x=Math.round(Math.max(0,Math.min(Number(job.x)||0,job.maxX)));
+  job.y=Math.round(Math.max(0,Math.min(Number(job.y)||0,job.maxY)));
+
+  ctx.fillStyle="#fff";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality="high";
+  ctx.drawImage(
+    job.sourceCanvas,0,0,job.sourceCanvas.width,job.sourceCanvas.height,
+    job.x,job.y,finalW,finalH
+  );
+
+  // Bitmap selalu dibuat ulang dari canvas FINAL.
   job.bitmap=canvasToMonoBitmap(canvas,PRINTER_WIDTH_DOTS,PRINTER_HEIGHT_DOTS);
   job.previewUrl=canvas.toDataURL("image/png");
-  const xEl=document.getElementById("labelPosX"), yEl=document.getElementById("labelPosY"), sEl=document.getElementById("labelScale");
-  if(xEl)xEl.value=Math.round(job.x);
-  if(yEl)yEl.value=Math.round(job.y);
+
+  const xEl=document.getElementById("labelPosX");
+  const yEl=document.getElementById("labelPosY");
+  const sEl=document.getElementById("labelScale");
+  if(xEl)xEl.value=job.x;
+  if(yEl)yEl.value=job.y;
   if(sEl)sEl.value=Math.round(job.scale*100);
 }
 let pendingLabelPrint=null;
@@ -782,6 +801,10 @@ async function sendPendingLabelPrint(){
      * Kirim job TSPL sebagai satu stream berurutan:
      * header -> raster 799x1199 (100 byte/row) -> PRINT.
      */
+    // Pastikan bitmap yang dikirim adalah kondisi TERAKHIR
+    // setelah posisi/ukuran diatur pada preview.
+    renderLabelJob(job);
+
     const header=asciiBytes(
       "SIZE 100 mm,150 mm\r\n"+
       "GAP 2 mm,0 mm\r\n"+
