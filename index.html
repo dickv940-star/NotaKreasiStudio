@@ -304,7 +304,7 @@ document.addEventListener("input",function(e){
   if(!el || !isAngkaEditable(el)) return;
   formatAngkaSaatKetik(el);
   hitung();
-  scheduleHistorySave();
+  if(typeof scheduleHistorySave==="function") scheduleHistorySave();
 });
 document.addEventListener("blur",function(e){
   if(!isAngkaEditable(e.target)) return;
@@ -600,6 +600,7 @@ async function printNotaDirect(){
   }
 }
 
+function downloadJPG(){
   saveCurrentToHistory();
   const noExport=notaArea.querySelectorAll(".no-export");
   const originalDisplay=[];
@@ -724,7 +725,8 @@ if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
 });
 
 document.getElementById("btnConnectPrinter")?.addEventListener("click",connectPrinterNota);
-document.getElementById("btnPrintDirect")?.addEventListener("click",printNotaDirect);\nhitung();
+document.getElementById("btnPrintDirect")?.addEventListener("click",printNotaDirect);
+hitung();
 window.addEventListener("smartprint-bluetooth-connected",e=>{
   const d=e.detail||{};
   setPrinterStatus("Terhubung: "+(d.name||"Printer"),"connected");
