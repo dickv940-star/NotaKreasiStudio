@@ -1,6 +1,6 @@
 /*
 =========================================================
- SmartPrint Bluetooth Engine v6.3.3
+ SmartPrint Bluetooth Engine v6.3.4
  Universal BLE Thermal Printer Transport
 =========================================================
 
@@ -1856,40 +1856,24 @@
         }
 
         /*
-         * Jika browser sudah pernah memberi izin, getPorts()
-         * dapat mengembalikan port tanpa membuka picker.
-         * SmartPrint menyimpan pilihan port terakhir agar pada
-         * pemakaian berikutnya printer dapat tersambung langsung.
+         * Jangan lagi memilih port berdasarkan index localStorage.
+         * Urutan getPorts() dapat berubah dan dapat membuat SmartPrint
+         * mencoba membuka COM yang bukan printer 4B-2084A.
+         *
+         * Hanya gunakan port otomatis bila Chrome memang hanya
+         * mempunyai SATU port yang sudah diberi izin. Jika ada
+         * beberapa COM, tampilkan picker agar pengguna memilih
+         * port Bluetooth SPP printer yang benar.
          */
         try {
             const ports = await navigator.serial.getPorts();
 
-            if (ports && ports.length) {
-                let selectedIndex = -1;
+            if (ports && ports.length === 1) {
+                const candidate = ports[0];
 
                 try {
-                    selectedIndex = Number(
-                        localStorage.getItem("SMARTPRINT_SERIAL_PORT_INDEX")
-                    );
-                } catch (e) {}
-
-                if (
-                    Number.isInteger(selectedIndex) &&
-                    selectedIndex >= 0 &&
-                    selectedIndex < ports.length
-                ) {
-                    serialPort = ports[selectedIndex];
-                } else if (ports.length === 1) {
-                    serialPort = ports[0];
-                }
-            }
-
-            serialWriteQueue = Promise.resolve();
-
-            if (serialPort) {
-                try {
-                    if (!serialPort.readable && !serialPort.writable) {
-                        await serialPort.open({
+                    if (!candidate.readable && !candidate.writable) {
+                        await candidate.open({
                             baudRate: baudRate,
                             dataBits: Number(options.dataBits) || 8,
                             stopBits: Number(options.stopBits) || 1,
@@ -1898,15 +1882,18 @@
                         });
                     }
 
-                    const info = serialPort.getInfo
-                        ? serialPort.getInfo()
-                        : {};
+                    serialPort = candidate;
+                    serialWriteQueue = Promise.resolve();
 
-                    log("SAVED SERIAL PRINTER CONNECTED", info);
+                    log("SINGLE GRANTED SERIAL PORT CONNECTED");
+
+                    const info = candidate.getInfo
+                        ? candidate.getInfo()
+                        : {};
 
                     dispatch("connected", {
                         type: "SERIAL",
-                        port: serialPort,
+                        port: candidate,
                         info: info,
                         baudRate: baudRate,
                         remembered: true
@@ -1915,7 +1902,7 @@
                     dispatch("status", {
                         connected: true,
                         type: "SERIAL",
-                        port: serialPort,
+                        port: candidate,
                         info: info,
                         baudRate: baudRate,
                         remembered: true
@@ -1923,17 +1910,22 @@
 
                     return true;
                 } catch (e) {
-                    warn("Saved COM gagal dibuka, buka picker:", e);
-                    try { serialPort = null; } catch (_) {}
+                    warn("Port tersimpan gagal dibuka, kembali ke picker:", e);
+                    try { await candidate.close(); } catch (_) {}
+                    serialPort = null;
                 }
+            } else if (ports && ports.length > 1) {
+                log(
+                    "Ada", ports.length,
+                    "COM tersimpan. Tidak memilih otomatis agar tidak salah port printer."
+                );
             }
         } catch (e) {
-            warn("getPorts() gagal:", e);
+            warn("Pemeriksaan granted serial ports gagal:", e);
         }
 
         return connectSerial(options);
     }
-
 
     async function connectSerial(options) {
 
