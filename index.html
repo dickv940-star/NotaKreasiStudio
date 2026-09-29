@@ -30,7 +30,7 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 .edit[contenteditable="true"]{font-weight:normal}
 .edit[contenteditable="true"].bold-cell{font-weight:700}
 #notaArea [contenteditable="true"]::selection{background:#b8d8ff;color:#111}
-#notaArea .bulk-edit-selected{outline:2px solid #1976d2!important;outline-offset:-2px;background:#eaf3ff!important}
+#notaArea .bulk-edit-selected{outline:none!important;background:transparent!important}
 #notaArea.edit-mode [contenteditable="true"]{cursor:text}
 #total,#sisa{cursor:text}
 #total.bold-cell,#dp.bold-cell,#sisa.bold-cell{font-weight:700}
@@ -680,20 +680,15 @@ function isEditableTextNode(node){
 }
 
 function rememberEditSelection(){
-  const active=document.activeElement;
-  if(active && active.matches('#notaArea .edit[contenteditable="true"], #nota[contenteditable="true"], #dp[contenteditable="true"]') && !window.getSelection()?.toString()){
-    bulkEditSelection=false;
-    document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
-  }
   const sel=window.getSelection();
   if(!sel || sel.rangeCount===0 || sel.isCollapsed)return;
-  bulkEditSelection=false;
-  document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
   const range=sel.getRangeAt(0);
   if(isEditableTextNode(range.startContainer) || isEditableTextNode(range.endContainer)){
     savedEditRange=range.cloneRange();
+    bulkEditSelection=false;
+    document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
+    updateEditSelectionInfo();
   }
-  updateEditSelectionInfo();
 }
 
 document.addEventListener("selectionchange",rememberEditSelection);
@@ -730,16 +725,17 @@ function updateEditSelectionInfo(){
   const info=document.getElementById("editSelectionInfo");
   if(!info)return;
   const sel=window.getSelection();
-  const text=sel?.toString()?.trim()||"";
+  const text=sel?.toString()||"";
+  const clean=text.trim();
   const blocks=getSelectedEditableBlocks();
-  if(text){
+  if(clean){
     info.textContent=blocks.length>1
-      ? text.length+" karakter • "+blocks.length+" bagian"
-      : text.length+" karakter diblok";
+      ? clean.length+" karakter • "+blocks.length+" bagian"
+      : clean.length+" karakter diblok";
   }else if(blocks.length){
-    info.textContent=blocks.length+" bagian diblok";
+    info.textContent=blocks.length+" bagian dipilih";
   }else{
-    info.textContent="Blok sebagian teks lalu pilih format";
+    info.textContent="Drag/blok karakter yang ingin diedit";
   }
 }
 
@@ -751,11 +747,18 @@ function selectAllEditables(){
     alert("Belum ada tulisan yang Anda ketik untuk diblok.");
     return;
   }
+  // Browser hanya dapat menampilkan satu selection kontinu.
+  // Jangan membuat kotak seleksi pada sel; gunakan range teks nyata pada bagian pertama
+  // dan simpan bagian lain sebagai target format tanpa menyorot template.
   bulkEditSelection=true;
   savedEditRange=null;
   editable.forEach(el=>el.classList.toggle("bulk-edit-selected",nonEmpty.includes(el)));
+  const first=nonEmpty[0];
+  const range=document.createRange();
+  range.selectNodeContents(first);
   const sel=window.getSelection();
   sel.removeAllRanges();
+  sel.addRange(range);
   updateEditSelectionInfo();
 }
 
