@@ -135,7 +135,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_FIX_V22_PREVIEW_POSITION_TO_PRINT_20260929 -->
+  <!-- NOTA_PRINT_FIX_V23_SHARP_RASTER_CONTINUOUS_LINES_20260929 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -615,17 +615,25 @@ async function connectPrinterNota(){
 }
 
 function canvasToMonoBitmap(canvas,width,height){
-  const src=canvas.getContext("2d").getImageData(0,0,canvas.width,canvas.height).data;
-  const out=new Uint8Array(Math.ceil(width/8)*height);
-  const srcW=canvas.width, srcH=canvas.height;
+  /*
+   * Canvas sudah dirender tepat 799×1199. Jangan melakukan sampling
+   * ulang dengan floor() per pixel karena garis 1-dot bisa terlewat dan
+   * menjadi putus-putus. Baca pixel FINAL langsung.
+   *
+   * Threshold 180 menjaga anti-alias tipis tetap terbaca tanpa membuat
+   * lubang huruf (O/P/R/A) tertutup seperti threshold yang terlalu tinggi.
+   */
+  const src=canvas.getContext("2d").getImageData(0,0,width,height).data;
+  const bytesPerRow=Math.ceil(width/8);
+  const out=new Uint8Array(bytesPerRow*height);
   for(let y=0;y<height;y++){
-    const sy=Math.min(srcH-1,Math.floor(y*srcH/height));
+    const row=y*width*4;
+    const outRow=y*bytesPerRow;
     for(let x=0;x<width;x++){
-      const sx=Math.min(srcW-1,Math.floor(x*srcW/width));
-      const i=(sy*srcW+sx)*4;
+      const i=row+x*4;
       const lum=(src[i]*299+src[i+1]*587+src[i+2]*114)/1000;
-      /* TSPL standard: bit 0 prints black, bit 1 leaves white. */
-      if(lum>=160) out[y*Math.ceil(width/8)+(x>>3)]|=(0x80>>(x&7));
+      /* TSPL: bit 0 = black, bit 1 = white. */
+      if(lum>=180) out[outRow+(x>>3)]|=(0x80>>(x&7));
     }
   }
   return out;
@@ -640,7 +648,7 @@ async function buildNotaBitmap(){
   const old=[];
   noExport.forEach((el,i)=>{old[i]=el.style.display;el.style.display="none"});
   try{
-    const source=await html2canvas(notaArea,{scale:2,useCORS:true,allowTaint:false,backgroundColor:"#fff",logging:false});
+    const source=await html2canvas(notaArea,{scale:4,useCORS:true,allowTaint:false,backgroundColor:"#fff",logging:false});
     const target=document.createElement("canvas");
     target.width=PRINTER_WIDTH_DOTS; target.height=PRINTER_HEIGHT_DOTS;
     const scale=Math.min(target.width/source.width,target.height/source.height);
