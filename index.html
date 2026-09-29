@@ -129,7 +129,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V10_LABEL_PREVIEW_20260929_5 -->
+  <!-- NOTA_PRINT_UI_V11_LABEL_PREVIEW_FIX_20260929_6 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -834,10 +834,12 @@ document.getElementById("btnPrintLabel")?.addEventListener("click",async()=>{
   closePrintChoiceModal();
   await printNotaDirect();
 });
-document.getElementById("btnConfirmLabelPrint")?.addEventListener("click",sendPendingLabelPrint);
-document.getElementById("btnCancelLabelPrint")?.addEventListener("click",closeLabelPreview);
-document.getElementById("labelPreviewModal")?.addEventListener("click",e=>{
-  if(e.target.id==="labelPreviewModal")closeLabelPreview();
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("btnConfirmLabelPrint")?.addEventListener("click",sendPendingLabelPrint);
+  document.getElementById("btnCancelLabelPrint")?.addEventListener("click",closeLabelPreview);
+  document.getElementById("labelPreviewModal")?.addEventListener("click",e=>{
+    if(e.target.id==="labelPreviewModal")closeLabelPreview();
+  });
 });
 document.getElementById("btnPrintEpson")?.addEventListener("click",()=>{
   closePrintChoiceModal();
