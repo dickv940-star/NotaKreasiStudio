@@ -1,813 +1,372 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Kreasi Studio</title>
-
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c40000">
-
 <link rel="icon" href="logo.png">
 
-
 <style>
+*{box-sizing:border-box}
+body{margin:0;padding:20px;font-family:Arial,Helvetica,sans-serif;background:#eee}
+.container{max-width:900px;margin:30px auto;background:#fff;padding:40px;border:1px solid #ddd}
+#notaArea{background:white;padding:10px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.logo{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding-top:0}
+.logo img{width:200px;height:auto;object-fit:contain;display:block;margin-bottom:6px}
+.logo h2{margin:0;line-height:1.1}
+.logo p{margin:1px 0;font-size:13px;line-height:1.2}
+.info{text-align:right;font-size:15px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:0}
+.info p{margin:2px 0}.info h2{margin-top:12px;font-size:20px}.info input{padding:5px}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
+.edit{outline:none}.edit:focus{background:#fff2b8}
+.footer{display:flex}.warning{width:60%;padding:12px}.warning h2{color:red}.warning h3{font-size:13px;font-weight:normal;margin-top:20px}
+.payment{width:40%;position:relative}
+#lunasBox{display:none;position:absolute;top:42%;left:52%;transform:translate(-50%,-50%) rotate(-12deg);z-index:9999;pointer-events:none}
+#lunasText{display:inline-block;padding:4px 18px;border:3px solid rgba(220,0,0,.28);color:rgba(220,0,0,.28);font-size:34px;font-weight:900;letter-spacing:3px;border-radius:6px;font-family:Arial,sans-serif}
+.buttons{text-align:center;margin-top:20px}
+button{background:#c40000;color:white;border:0;padding:8px 12px;margin:5px;cursor:pointer;font-weight:bold;border-radius:4px}
+button:hover{filter:brightness(.92)}
+#btnHistory{background:#333}
+#toolbarEdit{display:none;text-align:center;margin:10px}
+#historyModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;padding:30px 15px;overflow:auto}
+.history-panel{max-width:760px;margin:30px auto;background:#fff;border-radius:10px;padding:20px;box-shadow:0 15px 45px rgba(0,0,0,.3)}
+.history-head{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #ddd;padding-bottom:12px}
+.history-head h2{margin:0}
+.history-close{background:#666;margin:0}
+.history-empty{text-align:center;color:#777;padding:35px 10px}
+.history-list{display:flex;flex-direction:column;gap:10px;margin-top:15px}
+.history-item{border:1px solid #ddd;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.history-info{min-width:0}.history-title{font-weight:bold;font-size:16px}.history-meta{font-size:12px;color:#666;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-actions{display:flex;flex-shrink:0;gap:5px}.history-actions button{margin:0}
+.history-edit{background:#1677c8}.history-delete{background:#b00000}
+#tambahBaris{margin-top:10px;width:100%;padding:10px;border:1px dashed #888;border-radius:6px;background:white;cursor:pointer;font-size:14px;font-weight:bold;color:#222}
+.no-export{display:inline-flex}
 
-*{
-box-sizing:border-box;
+@media(max-width:700px){
+ body{padding:8px}.container{margin:10px auto;padding:12px}.header{gap:8px}.logo img{width:135px}.logo h2{font-size:16px}.logo p{font-size:10px}
+ .info{font-size:11px}.info h2{font-size:16px}.info input{max-width:125px;padding:3px}
+ th{font-size:13px}td{font-size:12px;padding:3px}.warning{width:58%;padding:5px}.payment{width:42%}.warning h2{font-size:17px}
+ .history-panel{padding:14px;margin:10px auto}.history-item{align-items:flex-start;flex-direction:column}.history-actions{width:100%}.history-actions button{flex:1}
 }
-
-body{
-margin:0;
-padding:20px;
-font-family:Arial,Helvetica,sans-serif;
-background:#eee;
-}
-
-.container{
-    max-width:900px;
-    margin:30px auto;      
-    background:#fff;
-    padding:40px;         
-    border:1px solid #ddd;
-    box-sizing:border-box;
-}
-    
 @media print{
-
-    @page{
-        size:A4;
-        margin:15mm;
-    }
-
-    body{
-        padding:0;
-        background:#fff;
-    }
-
-    .container{
-        border:none;
-        margin:0;
-        padding:0;
-        max-width:none;
-    }
-
-    button{
-        display:none;
-    }
+ @page{size:A4;margin:15mm}
+ body{padding:0;background:#fff}.container{border:none;margin:0;padding:0;max-width:none}
+ .buttons,#historyModal{display:none!important}
+ #tambahBaris{display:none}
 }
-
-#notaArea{
-    background:white;
-    padding:10px;
-    box-sizing:border-box;
-}
-
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:20px;
-}
-.logo{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:0;
-}
-
-.logo img{
-    width:200px;
-    height:auto;
-    object-fit:contain;
-    display:block;
-    margin-bottom:6px;
-}
-
-.logo h2{
-    margin:0;
-    line-height:1.1;
-}
- .info{
-    text-align:right;
-    font-size:15px;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-end;
-    gap:6px;
-}   
-.logo p{
-    margin:1px 0;
-    font-size:13px;
-    line-height:1.2;
-}
- .logo{
-padding-top:0;
-}
-
-.info{
-padding-top:0;
-} 
-.info{
-    text-align:right;
-    font-size:15px;
-}
-
-.info p{
-    margin:2px 0;
-}
-
-.info h2{
-    margin-top:12px;
-    font-size:20px;
-}
-.info input{
-padding:5px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-margin-top:15px;
-}
-
-th,td{
-border:2px solid #000;
-height:45px;
-}
-
-th{
-font-size:18px;
-}
-
-
-td{
-padding:5px;
-}
-
-.edit{
-outline:none;
-}
-
-.edit:focus{
-background:#fff2b8;
-}
-
-.footer{
-display:flex;
-}
-
-.warning{
-width:60%;
-padding:12px;
-}
-
-.warning h2{
-color:red;
-}
-
-
-.warning h3{
-
-font-size:13px;
-font-weight:normal;
-margin-top:20px;
-
-}
-.payment{
-    width:40%;
-    position:relative;
-}
-
-#lunasBox{
-    display:none;
-    position:absolute;
-
-    top:42%;
-    left:52%;
-
-    transform:translate(-50%,-50%) rotate(-12deg);
-
-    z-index:9999;
-    pointer-events:none;
-}
-
-#lunasText{
-    display:inline-block;
-
-    padding:4px 18px;
-
-    border:3px solid rgba(220,0,0,0.28);
-
-    color:rgba(220,0,0,0.28);
-
-    font-size:34px;
-    font-weight:900;
-
-    letter-spacing:3px;
-
-    border-radius:6px;
-
-    font-family:Arial, sans-serif;
-}
-.buttons{
-
-text-align:center;
-margin-top:20px;
-
-}
-
-button{
-
-background:#c40000;
-color:white;
-border:0;
-padding:12px 20px;
-margin:5px;
-cursor:pointer;
-
-}
-    
-button{
-    font-weight:bold;
-    padding:6px 10px;
-}
-    
-@media print{
-
-body{
-background:white;
-padding:0;
-}
-
-.container{
-padding:0;
-}
-
-.buttons{
-display:none;
-}
-
-  #tambahBaris {
-    margin-top: 10px;
-    width: 100%;
-    padding: 10px;
-    border: 1px dashed #888;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-#tambahBaris:hover {
-    background: #f5f5f5;
-}
- .no-export {
-    display: inline-flex;
-}
-    
 </style>
-
 </head>
 
-
 <body>
-
-
 <div class="container">
-
 <div id="notaArea">
-
-  <!-- HEADER WAJIB -->
   <div class="header">
-
     <div class="logo">
       <img src="logo-512x200.png">
-        
-<h2>Studio Foto & Make Up</h2>
-  
- <p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
-
- <p>☎ 0882 1218 1283 (WA)</p>
-
-</div>
-
-<div class="info">
-
-
-<p>
-
-Terima Tgl :
-<input type="date" id="tanggal">
-
-</p>
-
-
-<p>
-
-Selesai Tgl :
-<input type="date">
-
-</p>
-
-
-
-<h2>
-
-NO :
-<span id="nota" contenteditable="true"></span>
-
-</h2>
-
-
-</div>
-
-
-</div>
-
-
-<!-- TABEL -->
-
-
-<table>
-
-
-<thead>
-
-<tr>
-
-<th>KETERANGAN</th>
-<th>BANYAK</th>
-<th>HARGA</th>
-<th>JUMLAH</th>
-
-</tr>
-
-</thead>
-
-
-
-<tbody id="bodyNota">
-
-<tr>
-<td class="edit" contenteditable="true"></td>
-<td class="edit qty" contenteditable="true"></td>
-<td class="edit harga" contenteditable="true"></td>
-<td class="jumlah"></td>
-</tr>
-
-<tr>
-<td class="edit" contenteditable="true"></td>
-<td class="edit qty" contenteditable="true"></td>
-<td class="edit harga" contenteditable="true"></td>
-<td class="jumlah"></td>
-</tr>
-
-<tr>
-<td class="edit" contenteditable="true"></td>
-<td class="edit qty" contenteditable="true"></td>
-<td class="edit harga" contenteditable="true"></td>
-<td class="jumlah"></td>
-</tr>
-
-<tr>
-<td class="edit" contenteditable="true"></td>
-<td class="edit qty" contenteditable="true"></td>
-<td class="edit harga" contenteditable="true"></td>
-<td class="jumlah"></td>
-</tr>
-
-<tr>
-<td class="edit" contenteditable="true"></td>
-<td class="edit qty" contenteditable="true"></td>
-<td class="edit harga" contenteditable="true"></td>
-<td class="jumlah"></td>
-</tr>
-
-</tbody>
-
-</table>
-
-<button class="no-export" id="btnTambahBaris">
-    + Tambah Baris
-</button>
-
-<div class="footer">
-
-
-
-<div class="warning">
-
-
-<h2>
-PERHATIAN !!!
-</h2>
-
-
-<p>
-- Barang & jasa yang sudah dibeli tidak dapat dikembalikan/ditukar.
-</p>
-
-<p>
-- Barang yang tidak diambil dalam jangka waktu 1 bulan rusak/hilang bukan tanggung jawab kami lagi.
-</p>
-
-<h3>
-Terima Kasih Sudah Berbelanja Di Toko Kami
-</h3>
-
-
-</div>
-
-
-<div class="payment">
-
-    <table>
-
-        <tr>
-            <th>Total</th>
-            <td id="total">0</td>
-        </tr>
-
-        <tr>
-            <th>DP</th>
-            <td id="dp" contenteditable="true"></td>
-        </tr>
-
-        <tr>
-            <th>Sisa</th>
-            <td id="sisa">0</td>
-        </tr>
-
-    </table>
-
-    <div id="lunasBox">
-        <div id="lunasText">LUNAS</div>
+      <h2>Studio Foto & Make Up</h2>
+      <p>Jl. Pademangan 3 Gg.22 Raya No.5 Jakarta Utara</p>
+      <p>☎ 0882 1218 1283 (WA)</p>
     </div>
+    <div class="info">
+      <p>Terima Tgl : <input type="date" id="tanggal"></p>
+      <p>Selesai Tgl : <input type="date" id="tanggalSelesai"></p>
+      <h2>NO : <span id="nota" contenteditable="true"></span></h2>
+    </div>
+  </div>
 
-</div> <!-- payment -->
+  <table>
+    <thead><tr><th>KETERANGAN</th><th>BANYAK</th><th>HARGA</th><th>JUMLAH</th></tr></thead>
+    <tbody id="bodyNota">
+      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
+      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
+      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
+      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
+      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
+    </tbody>
+  </table>
 
-</div> <!-- footer -->
+  <button class="no-export" id="btnTambahBaris">+ Tambah Baris</button>
 
-</div> <!-- notaArea -->
-
-</div> <!-- container -->
+  <div class="footer">
+    <div class="warning">
+      <h2>PERHATIAN !!!</h2>
+      <p>- Barang & jasa yang sudah dibeli tidak dapat dikembalikan/ditukar.</p>
+      <p>- Barang yang tidak diambil dalam jangka waktu 1 bulan rusak/hilang bukan tanggung jawab kami lagi.</p>
+      <h3>Terima Kasih Sudah Berbelanja Di Toko Kami</h3>
+    </div>
+    <div class="payment">
+      <table>
+        <tr><th>Total</th><td id="total">0</td></tr>
+        <tr><th>DP</th><td id="dp" contenteditable="true"></td></tr>
+        <tr><th>Sisa</th><td id="sisa">0</td></tr>
+      </table>
+      <div id="lunasBox"><div id="lunasText">LUNAS</div></div>
+    </div>
+  </div>
+</div>
+</div>
 
 <div class="buttons">
-<button onclick="window.print()">
-Cetak Nota
-</button>
+  <button onclick="window.print()">Cetak Nota</button>
+  <button onclick="downloadJPG()">Download JPG</button>
+  <button onclick="resetNota()">Reset</button>
+  <button onclick="toggleLunas()">LUNAS</button>
+  <button onclick="installApp()">Install App</button>
+  <button onclick="toggleEdit()">Edit Teks</button>
+  <button id="btnHistory" onclick="openHistory()">📋 Histori</button>
 
-<button onclick="downloadJPG()">
-Download JPG
-</button>
+  <div id="toolbarEdit">
+    <button onclick="cmd('bold')"><b>B</b></button>
+    <button onclick="cmd('italic')"><i>I</i></button>
+    <button onclick="cmd('justifyLeft')">⬅</button>
+    <button onclick="cmd('justifyCenter')">⬤</button>
+    <button onclick="cmd('justifyRight')">➡</button>
+  </div>
+</div>
 
-<button onclick="resetNota()">
-Reset
-</button>
-    
-<button onclick="toggleLunas()">
-LUNAS
-</button>
-
-<button onclick="installApp()">
-Install App
-</button>
-
-<button onclick="toggleEdit()">Edit Teks</button>
-
-<div id="toolbarEdit" style="display:none;text-align:center;margin:10px;">
-  <button onclick="cmd('bold')"><b>B</b></button>
-  <button onclick="cmd('italic')"><i>I</i></button>
-  <button onclick="cmd('justifyLeft')">⬅</button>
-  <button onclick="cmd('justifyCenter')">⬤</button>
-  <button onclick="cmd('justifyRight')">➡</button>
+<div id="historyModal" aria-hidden="true">
+  <div class="history-panel">
+    <div class="history-head">
+      <h2>📋 Histori Nota</h2>
+      <button class="history-close" onclick="closeHistory()">Tutup</button>
+    </div>
+    <div id="historyList" class="history-list"></div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
 <script>
-    
+const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
+const tanggalSelesai = document.getElementById("tanggalSelesai");
 const nota = document.getElementById("nota");
 const total = document.getElementById("total");
 const dp = document.getElementById("dp");
 const sisa = document.getElementById("sisa");
-const notaArea = document.getElementById("notaArea");
 
-function formatAngka(n){
-  return new Intl.NumberFormat("id-ID").format(Number(n));
-}
+const HISTORY_KEY = "kreasiStudioNotaHistory";
+const MAX_HISTORY = 50;
+let historyTimer = null;
 
-function angka(v){
-return Number(
-String(v)
-.replace(/\./g,'')
-.replace(/[^0-9]/g,'')
-) || 0;
-}
+function formatAngka(n){return new Intl.NumberFormat("id-ID").format(Number(n))}
+function angka(v){return Number(String(v).replace(/\./g,"").replace(/[^0-9]/g,""))||0}
 
-// init tanggal
 tanggal.valueAsDate = new Date();
 
+document.addEventListener("input", function(e){
+  hitung();
+  scheduleHistorySave();
+});
 
-// INPUT FORMAT + HITUNG
-
-document.addEventListener("input", hitung);
-
-// FORMAT QTY, HARGA, DAN DP
 document.addEventListener("blur", function(e){
-
-    if(
-        e.target.classList.contains("qty") ||
-        e.target.classList.contains("harga") ||
-        e.target.id === "dp"
-    ){
-
-        let a = angka(e.target.innerText);
-
-        e.target.innerText =
-            a ? formatAngka(a) : "";
-
-        hitung();
-    }
-
+  if(e.target.classList.contains("qty") || e.target.classList.contains("harga") || e.target.id==="dp"){
+    const a=angka(e.target.innerText);
+    e.target.innerText=a?formatAngka(a):"";
+    hitung();
+    saveCurrentToHistory();
+  }
 }, true);
-    
+
 function hitung(){
-
-  let totalNilai = 0;
-
-  document.querySelectorAll("tbody tr").forEach(row => {
-
-    let qty = angka(row.querySelector(".qty")?.innerText);
-    let harga = angka(row.querySelector(".harga")?.innerText);
-
-    let jumlah = qty * harga;
-
-    let cell = row.querySelector(".jumlah");
-    if (cell) {
-      cell.innerText = jumlah ? formatAngka(jumlah) : "";
-    }
-
-    totalNilai += jumlah;
+  let totalNilai=0;
+  document.querySelectorAll("#bodyNota tr").forEach(row=>{
+    const qty=angka(row.querySelector(".qty")?.innerText);
+    const harga=angka(row.querySelector(".harga")?.innerText);
+    const jumlah=qty*harga;
+    const cell=row.querySelector(".jumlah");
+    if(cell) cell.innerText=jumlah?formatAngka(jumlah):"";
+    totalNilai+=jumlah;
   });
-
-  // TOTAL
-  total.innerText = formatAngka(totalNilai);
-
-  // DP
-  let bayar = angka(dp.innerText);
-
-// DP kosong → SISA kosong
-if (!dp.innerText || dp.innerText.trim() === "") {
-  sisa.innerText = "";
-} else {
-
-  let sisaNilai = totalNilai - bayar;
-
-  if (sisaNilai < 0) sisaNilai = 0;
-
-  sisa.innerText = formatAngka(sisaNilai);
+  total.innerText=formatAngka(totalNilai);
+  const bayar=angka(dp.innerText);
+  if(!dp.innerText.trim()) sisa.innerText="";
+  else sisa.innerText=formatAngka(Math.max(0,totalNilai-bayar));
 }
+
+function getHistory(){
+  try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return []}
 }
-// DOWNLOAD JPG
+function setHistory(items){
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0,MAX_HISTORY)));
+}
+function snapshotNota(){
+  const cells=[...notaArea.querySelectorAll("[contenteditable='true']")].map(el=>({
+    selector:el.id?("#"+el.id):null,
+    html:el.innerHTML
+  }));
+  const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll(".edit")].map(el=>el.innerHTML));
+  return {
+    id:Date.now().toString(),
+    savedAt:new Date().toISOString(),
+    tanggal:tanggal.value,
+    tanggalSelesai:tanggalSelesai.value,
+    nomor:nota.innerText.trim(),
+    cells,
+    rows,
+    dp:dp.innerHTML,
+    lunas:document.getElementById("lunasBox").style.display==="block"
+  };
+}
+function hasNotaData(){
+  return !!(nota.innerText.trim() || tanggal.value || tanggalSelesai.value ||
+    [...document.querySelectorAll("#bodyNota .edit")].some(el=>el.innerText.trim()) ||
+    dp.innerText.trim());
+}
+function saveCurrentToHistory(){
+  if(!hasNotaData()) return;
+  const data=snapshotNota();
+  const items=getHistory();
+  const key=data.nomor || ("date:"+data.tanggal);
+  const existing=items.findIndex(x=>(x.nomor||("date:"+x.tanggal))===key);
+  if(existing>=0){
+    data.id=items[existing].id;
+    items.splice(existing,1);
+  }
+  items.unshift(data);
+  setHistory(items);
+}
+function scheduleHistorySave(){
+  clearTimeout(historyTimer);
+  historyTimer=setTimeout(saveCurrentToHistory,700);
+}
+function formatTanggal(v){
+  if(!v)return "Tanggal tidak diisi";
+  const d=new Date(v+"T00:00:00");
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+function openHistory(){
+  renderHistory();
+  const modal=document.getElementById("historyModal");
+  modal.style.display="block";
+  modal.setAttribute("aria-hidden","false");
+}
+function closeHistory(){
+  const modal=document.getElementById("historyModal");
+  modal.style.display="none";
+  modal.setAttribute("aria-hidden","true");
+}
+function renderHistory(){
+  const list=document.getElementById("historyList");
+  const items=getHistory();
+  if(!items.length){
+    list.innerHTML='<div class="history-empty">Belum ada nota tersimpan.<br>Nota akan tersimpan otomatis saat Anda mengisinya.</div>';
+    return;
+  }
+  list.innerHTML="";
+  items.forEach((item,index)=>{
+    const firstDesc=(item.rows||[]).flat().find(v=>v&&v.replace(/<[^>]*>/g,"").trim());
+    const title=item.nomor?("Nota No. "+item.nomor):"Nota tanpa nomor";
+    const meta=formatTanggal(item.tanggal)+(firstDesc?" • "+firstDesc.replace(/<[^>]*>/g,"").trim().slice(0,70):"");
+    const row=document.createElement("div");
+    row.className="history-item";
+    row.innerHTML='<div class="history-info"><div class="history-title"></div><div class="history-meta"></div></div><div class="history-actions"><button class="history-edit">Edit</button><button class="history-delete">Hapus</button></div>';
+    row.querySelector(".history-title").textContent=title;
+    row.querySelector(".history-meta").textContent=meta;
+    row.querySelector(".history-edit").onclick=()=>loadHistory(index);
+    row.querySelector(".history-delete").onclick=()=>deleteHistory(index);
+    list.appendChild(row);
+  });
+}
+function loadHistory(index){
+  const item=getHistory()[index];
+  if(!item)return;
+  tanggal.value=item.tanggal||"";
+  tanggalSelesai.value=item.tanggalSelesai||"";
+  nota.innerHTML=item.nomor||"";
+  const tbody=document.getElementById("bodyNota");
+  tbody.innerHTML="";
+  (item.rows||[]).forEach(rowData=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td>';
+    tr.querySelectorAll(".edit").forEach((el,i)=>el.innerHTML=rowData[i]||"");
+    tbody.appendChild(tr);
+  });
+  if(!item.rows || !item.rows.length){
+    document.getElementById("btnTambahBaris").click();
+  }
+  dp.innerHTML=item.dp||"";
+  document.getElementById("lunasBox").style.display=item.lunas?"block":"none";
+  hitung();
+  closeHistory();
+  scheduleHistorySave();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function deleteHistory(index){
+  const items=getHistory();
+  const item=items[index];
+  if(!item)return;
+  const label=item.nomor?("nota nomor "+item.nomor):"nota ini";
+  if(!confirm("Hapus "+label+" dari histori?"))return;
+  items.splice(index,1);
+  setHistory(items);
+  renderHistory();
+}
 
 function downloadJPG(){
-
-    const notaArea = document.getElementById("notaArea");
-
-    // Elemen yang TIDAK boleh masuk ke hasil JPG
-    const noExport = notaArea.querySelectorAll(".no-export");
-
-    // Simpan kondisi display asli
-    const originalDisplay = [];
-
-    // Sembunyikan sementara
-    noExport.forEach((el, index) => {
-        originalDisplay[index] = el.style.display;
-        el.style.display = "none";
-    });
-
-    html2canvas(notaArea, {
-        scale: 4,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: "#ffffff",
-
-        // Membuat teks dan garis lebih tajam
-        logging: false,
-
-        // Ukuran mengikuti nota asli
-        width: notaArea.scrollWidth,
-        height: notaArea.scrollHeight,
-
-        windowWidth: notaArea.scrollWidth,
-        windowHeight: notaArea.scrollHeight
-    })
-    .then(canvas => {
-
-        const padding = 40;
-
-        const newCanvas = document.createElement("canvas");
-
-        newCanvas.width =
-            canvas.width + (padding * 2);
-
-        newCanvas.height =
-            canvas.height + (padding * 2);
-
-        const ctx = newCanvas.getContext("2d");
-
-        // Background putih
-        ctx.fillStyle = "#ffffff";
-
-        ctx.fillRect(
-            0,
-            0,
-            newCanvas.width,
-            newCanvas.height
-        );
-
-        // Gambar hasil render resolusi tinggi
-        ctx.drawImage(
-            canvas,
-            padding,
-            padding
-        );
-
-        // JPEG kualitas maksimum
-        const link = document.createElement("a");
-
-        link.download =
-            "Nota-Kreasi-Studio-HD.jpg";
-
-        link.href =
-            newCanvas.toDataURL(
-                "image/jpeg",
-                1.0
-            );
-
-        link.click();
-
-    })
-    .catch(error => {
-
-        console.error(
-            "Gagal membuat JPG:",
-            error
-        );
-
-        alert(
-            "Gagal membuat gambar nota."
-        );
-
-    })
-    .finally(() => {
-
-        // Tampilkan kembali elemen setelah selesai
-        noExport.forEach((el, index) => {
-            el.style.display = originalDisplay[index];
-        });
-
-    });
-
+  saveCurrentToHistory();
+  const noExport=notaArea.querySelectorAll(".no-export");
+  const originalDisplay=[];
+  noExport.forEach((el,i)=>{originalDisplay[i]=el.style.display;el.style.display="none"});
+  html2canvas(notaArea,{scale:4,useCORS:true,allowTaint:false,backgroundColor:"#fff",logging:false,width:notaArea.scrollWidth,height:notaArea.scrollHeight,windowWidth:notaArea.scrollWidth,windowHeight:notaArea.scrollHeight})
+  .then(canvas=>{
+    const padding=40,newCanvas=document.createElement("canvas");
+    newCanvas.width=canvas.width+padding*2;newCanvas.height=canvas.height+padding*2;
+    const ctx=newCanvas.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,newCanvas.width,newCanvas.height);ctx.drawImage(canvas,padding,padding);
+    const link=document.createElement("a");link.download="Nota-Kreasi-Studio-HD.jpg";link.href=newCanvas.toDataURL("image/jpeg",1);link.click();
+  }).catch(error=>{console.error("Gagal membuat JPG:",error);alert("Gagal membuat gambar nota.")})
+  .finally(()=>noExport.forEach((el,i)=>el.style.display=originalDisplay[i]));
 }
 function toggleLunas(){
-    const box = document.getElementById("lunasBox");
-
-    if(box.style.display === "block"){
-        box.style.display = "none";
-    }else{
-        box.style.display = "block";
-    }
+  const box=document.getElementById("lunasBox");
+  box.style.display=box.style.display==="block"?"none":"block";
+  saveCurrentToHistory();
 }
-
-// RESET
 function resetNota(){
-
-document.querySelectorAll(".edit").forEach(x => x.innerText = "");
-document.querySelectorAll(".jumlah").forEach(x => x.innerText = "");
-
-dp.innerText = "";
-total.innerText = "0";
-sisa.innerText = "0";
-
-document.getElementById("lunasBox").style.display = "none";
-
-document.querySelector(".edit")?.focus();
+  saveCurrentToHistory();
+  document.querySelectorAll("#bodyNota .edit").forEach(x=>x.innerText="");
+  document.querySelectorAll("#bodyNota .jumlah").forEach(x=>x.innerText="");
+  dp.innerText="";total.innerText="0";sisa.innerText="";
+  document.getElementById("lunasBox").style.display="none";
+  nota.innerText="";
+  document.getElementById("tanggalSelesai").value="";
+  document.querySelector(".edit")?.focus();
 }
-
-    
-// PWA INSTALL
-
 let deferredPrompt;
-
-window.addEventListener("beforeinstallprompt", e => {
-e.preventDefault();
-deferredPrompt = e;
-});
-
-
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e});
 function installApp(){
-
-if(deferredPrompt){
-deferredPrompt.prompt();
-deferredPrompt = null;
+  if(deferredPrompt){deferredPrompt.prompt();deferredPrompt=null}
+  else alert("Install belum tersedia");
 }
-else{
-alert("Install belum tersedia");
+function toggleEdit(){
+  const toolbar=document.getElementById("toolbarEdit");
+  const area=document.getElementById("notaArea");
+  const isHidden=toolbar.style.display==="none"||toolbar.style.display==="";
+  toolbar.style.display=isHidden?"block":"none";
+  area.contentEditable=isHidden?"true":"false";
 }
-    
-}
-    
-// EDIT MODE TOOLBAR
-
-function toggleEdit() {
-  const toolbar = document.getElementById("toolbarEdit");
-  const area = document.getElementById("notaArea");
-
-  const isHidden = toolbar.style.display === "none" || toolbar.style.display === "";
-
-  toolbar.style.display = isHidden ? "block" : "none";
-  area.contentEditable = isHidden ? "true" : "false";
-}
-
-let lastNota = Number(localStorage.getItem("lastNota")) || 0;
-
-// BUAT NOMOR BARU
-function buatNomor() {
-    lastNota++;
-    localStorage.setItem("lastNota", lastNota);
-    return String(lastNota).padStart(4, "0");
-}
-
-// TAMPILKAN NOMOR
-function setNotaBaru() {
-    if (!nota) return;
-    nota.innerText = buatNomor();
-}
-
-// EDIT MANUAL
-nota?.addEventListener("blur", () => {
-    let manual = parseInt(nota.innerText.replace(/\D/g, ""));
-    if (!isNaN(manual)) {
-        lastNota = manual;
-        localStorage.setItem("lastNota", lastNota);
-    }
+let lastNota=Number(localStorage.getItem("lastNota"))||0;
+function buatNomor(){lastNota++;localStorage.setItem("lastNota",lastNota);return String(lastNota).padStart(4,"0")}
+function setNotaBaru(){if(nota&&!nota.innerText.trim())nota.innerText=buatNomor()}
+nota?.addEventListener("blur",()=>{
+  const manual=parseInt(nota.innerText.replace(/\D/g,""));
+  if(!isNaN(manual)){lastNota=manual;localStorage.setItem("lastNota",lastNota)}
+  saveCurrentToHistory();
 });
-    
-// FORMAT TEKS
-function cmd(command){
-  document.execCommand(command, false, null);
-}
- // TAMBAH BARIS
-const btnTambahBaris = document.getElementById("btnTambahBaris");
-
-if (btnTambahBaris) {
-
-    btnTambahBaris.addEventListener("click", function () {
-
-        const tbody = document.getElementById("bodyNota");
-
-        const baris = document.createElement("tr");
-
-        baris.innerHTML = `
-            <td class="edit" contenteditable="true"></td>
-            <td class="edit qty" contenteditable="true"></td>
-            <td class="edit harga" contenteditable="true"></td>
-            <td class="jumlah"></td>
-        `;
-
-        tbody.appendChild(baris);
-
-        // Fokus otomatis ke kolom keterangan
-        baris.querySelector(".edit").focus();
-
-        // Hitung ulang
-        hitung();
-
-    });
-    
-}
-
-
-// SERVICE WORKER
-
-if ("serviceWorker" in navigator) {
-
-    navigator.serviceWorker
-        .register("sw.js")
-        .catch(err => console.log(err));
-
-}
-
+function cmd(command){document.execCommand(command,false,null)}
+const btnTambahBaris=document.getElementById("btnTambahBaris");
+if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
+  const tr=document.createElement("tr");
+  tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td>';
+  document.getElementById("bodyNota").appendChild(tr);
+  tr.querySelector(".edit").focus();hitung();scheduleHistorySave();
+});
+window.addEventListener("beforeunload",saveCurrentToHistory);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeHistory()});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(err=>console.log(err));
 </script>
-
-</script>
-
 </body>
 </html>
