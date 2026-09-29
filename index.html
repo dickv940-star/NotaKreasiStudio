@@ -693,13 +693,11 @@ function toggleEdit(){
     area.querySelectorAll(".bulk-edit-selected").forEach(el=>el.classList.remove("bulk-edit-selected"));
     const sel=window.getSelection();
     if(sel)sel.removeAllRanges();
-    updateEditSelectionInfo();
-    return;
+        return;
   }
   const first=area.querySelector('[contenteditable="true"]');
   first?.focus();
-  updateEditSelectionInfo();
-}
+  }
 let savedEditRange=null;
 let bulkEditSelection=false;
 
@@ -718,16 +716,14 @@ function rememberEditSelection(){
       savedEditRange=range.cloneRange();
       bulkEditSelection=false;
       document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
-      updateEditSelectionInfo();
-    }
+          }
     return;
   }
   if(isEditableTextNode(range.startContainer) || isEditableTextNode(range.endContainer)){
     savedEditRange=range.cloneRange();
     bulkEditSelection=false;
     document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
-    updateEditSelectionInfo();
-  }
+      }
 }
 
 document.addEventListener("selectionchange",rememberEditSelection);
@@ -760,23 +756,7 @@ function getSelectedEditables(){
   return active&&active.matches('[contenteditable="true"]')?[active]:[];
 }
 
-function updateEditSelectionInfo(){
-  const info=document.getElementById("editSelectionInfo");
-  if(!info)return;
-  const sel=window.getSelection();
-  const text=sel?.toString()||"";
-  const clean=text.trim();
-  const blocks=getSelectedEditableBlocks();
-  if(clean){
-    info.textContent=blocks.length>1
-      ? clean.length+" karakter • "+blocks.length+" bagian"
-      : clean.length+" karakter diblok";
-  }else if(blocks.length){
-    info.textContent=blocks.length+" bagian dipilih";
-  }else{
-    info.textContent="Drag/blok karakter yang ingin diedit";
-  }
-}
+function updateEditSelectionInfo(){ return; }
 
 function selectAllEditables(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
@@ -798,8 +778,7 @@ function selectAllEditables(){
   const sel=window.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
-  updateEditSelectionInfo();
-}
+  }
 
 function applyInline(command,value){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
@@ -814,8 +793,7 @@ function applyInline(command,value){
       document.execCommand(command,false,value??null);
     });
     saveCurrentToHistory();
-    updateEditSelectionInfo();
-    return;
+        return;
   }
   if(!restoreEditSelection()){
     alert("Blok sebagian teks yang ingin diedit terlebih dahulu.");
@@ -830,8 +808,7 @@ function applyInline(command,value){
     document.execCommand(command,false,value??null);
     savedEditRange=sel.rangeCount?sel.getRangeAt(0).cloneRange():null;
     saveCurrentToHistory();
-    updateEditSelectionInfo();
-  }catch(e){console.error("Format teks:",e)}
+      }catch(e){console.error("Format teks:",e)}
 }
 
 function applyInlineStyle(property,value){
@@ -844,8 +821,7 @@ function applyInlineStyle(property,value){
       el.appendChild(span);
     });
     saveCurrentToHistory();
-    updateEditSelectionInfo();
-    return;
+        return;
   }
   if(!restoreEditSelection()){
     alert("Blok sebagian teks yang ingin diedit terlebih dahulu.");
@@ -868,8 +844,7 @@ function applyInlineStyle(property,value){
   sel.addRange(next);
   savedEditRange=next.cloneRange();
   saveCurrentToHistory();
-  updateEditSelectionInfo();
-}
+  }
 
 function applyFontFamily(value){applyInline("fontName",value)}
 function applyFontSize(value){applyInlineStyle("fontSize",value)}
@@ -889,8 +864,7 @@ function applyTextAlign(value){
   if(bulkEditSelection){
     getSelectedEditableBlocks().forEach(el=>el.style.textAlign=value);
     saveCurrentToHistory();
-    updateEditSelectionInfo();
-    return;
+        return;
   }
   if(!restoreEditSelection()){
     alert("Blok teks atau sel yang ingin diratakan terlebih dahulu.");
@@ -903,8 +877,7 @@ function applyTextAlign(value){
   }
   blocks.forEach(el=>el.style.textAlign=value);
   saveCurrentToHistory();
-  updateEditSelectionInfo();
-}
+  }
 
 function cmd(command){
   applyInline(command);
