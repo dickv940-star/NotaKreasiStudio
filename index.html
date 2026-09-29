@@ -267,47 +267,34 @@ pasangHitungOtomatis();
 
 function formatAngkaSaatKetik(el){
   if(!el || !(el.classList.contains("qty") || el.classList.contains("harga") || el.id==="dp")) return;
+  const oldText=el.textContent||"";
   const sel=window.getSelection();
-  let caret=0;
-  if(sel && sel.rangeCount){
-    const range=sel.getRangeAt(0);
-    const pre=range.cloneRange();
-    pre.selectNodeContents(el);
-    pre.setEnd(range.startContainer,range.startOffset);
-    caret=(pre.toString().match(/[0-9]/g)||[]).length;
+  let caretDigits=0;
+  if(sel && sel.rangeCount && el.contains(sel.anchorNode)){
+    const range=document.createRange();
+    range.selectNodeContents(el);
+    range.setEnd(sel.anchorNode,Math.min(sel.anchorOffset,sel.anchorNode.length||sel.anchorOffset));
+    caretDigits=(range.toString().match(/[0-9]/g)||[]).length;
   }
-  const digits=(el.textContent||"").replace(/[^0-9]/g,"");
-  const formatted=digits?formatAngka(parseInt(digits,10)):"";
+  const digits=oldText.replace(/[^0-9]/g,"");
+  const formatted=digits?new Intl.NumberFormat("id-ID").format(Number(digits)):"";
+  if(oldText===formatted) return;
   el.textContent=formatted;
-  if(sel && document.activeElement===el){
-    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
-    const node=walker.nextNode();
+  if(document.activeElement===el && formatted){
+    const node=el.firstChild;
     if(node){
-      let pos=0, digitCount=0;
-      while(pos<node.nodeValue.length){
-        if(/[0-9]/.test(node.nodeValue[pos])) digitCount++;
-        if(digitCount>=caret) break;
+      let pos=0,count=0;
+      while(pos<node.textContent.length && count<caretDigits){
+        if(/[0-9]/.test(node.textContent[pos])) count++;
         pos++;
       }
       const range=document.createRange();
-      range.setStart(node,Math.min(pos+1,node.nodeValue.length));
+      range.setStart(node,Math.min(pos,node.textContent.length));
       range.collapse(true);
       sel.removeAllRanges();
       sel.addRange(range);
     }
   }
-}
-document.addEventListener("input", function(e){
-  formatAngkaSaatKetik(e.target);
-  hitung();
-  scheduleHistorySave();
-});
-
-function formatInputAngka(el){
-  if(!el)return;
-  const raw=(el.textContent||"").trim();
-  const digits=raw.replace(/[^0-9]/g,"");
-  el.textContent=digits?formatAngka(parseInt(digits,10)):"";
 }
 document.addEventListener("blur", function(e){
   if(e.target.classList.contains("qty") || e.target.classList.contains("harga") || e.target.id==="dp"){
