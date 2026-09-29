@@ -1,0 +1,127 @@
+name: Fix text editor selection
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-editor:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch Edit Teks selection
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          start = s.index('let editMode=false;')
+          end = s.index('let lastNota=', start)
+
+          replacement = r'''let editMode=false;
+          let savedEditRange=null;
+
+          function editableHost(node){
+            const el=node?.nodeType===3 ? node.parentElement : node;
+            return el?.closest?.('#notaArea [contenteditable="true"]') || null;
+          }
+          function rangeIsInsideOneEditable(range){
+            if(!range) return null;
+            const a=editableHost(range.startContainer), b=editableHost(range.endContainer);
+            return a && a===b ? a : null;
+          }
+          function clearEditSelection(){
+            savedEditRange=null;
+            const sel=window.getSelection();
+            if(sel) sel.removeAllRanges();
+            document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
+          }
+          function rememberEditSelection(){
+            if(!editMode) return;
+            const sel=window.getSelection();
+            if(!sel || !sel.rangeCount) return;
+            const range=sel.getRangeAt(0);
+            if(rangeIsInsideOneEditable(range)) savedEditRange=range.cloneRange();
+          }
+          document.addEventListener('selectionchange',rememberEditSelection);
+          function restoreEditSelection(){
+            if(!savedEditRange || !rangeIsInsideOneEditable(savedEditRange)) return false;
+            const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(savedEditRange); return true;
+          }
+          function getSelectedEditableBlocks(){ return []; }
+          function getSelectedEditables(){
+            if(savedEditRange){ const host=rangeIsInsideOneEditable(savedEditRange); if(host) return [host]; }
+            const active=document.activeElement;
+            return active&&active.matches('[contenteditable="true"]')?[active]:[];
+          }
+          function updateEditSelectionInfo(){ return; }
+          function selectAllEditables(){
+            if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+            const active=editableHost(document.activeElement);
+            if(!active){alert('Klik di dalam teks yang ingin diedit terlebih dahulu.');return}
+            if(!(active.textContent||'').trim()){alert('Belum ada tulisan pada bagian ini.');return}
+            const range=document.createRange(); range.selectNodeContents(active);
+            const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); savedEditRange=range.cloneRange();
+          }
+          function applyInline(command,value){
+            if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+            if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+            const sel=window.getSelection();
+            if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+            const range=sel.getRangeAt(0);
+            if(!rangeIsInsideOneEditable(range)){alert('Seleksi harus berada pada satu bagian teks.');return}
+            try{ document.execCommand(command,false,value??null); savedEditRange=sel.rangeCount?sel.getRangeAt(0).cloneRange():null; saveCurrentToHistory(); }
+            catch(e){console.error('Format teks:',e)}
+          }
+          function applyInlineStyle(property,value){
+            if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+            if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+            const sel=window.getSelection();
+            if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+            const range=sel.getRangeAt(0);
+            if(!rangeIsInsideOneEditable(range)){alert('Seleksi harus berada pada satu bagian teks.');return}
+            const fragment=range.extractContents();
+            const span=document.createElement('span'); span.style[property]=value; span.appendChild(fragment); range.insertNode(span);
+            sel.removeAllRanges(); const next=document.createRange(); next.selectNodeContents(span); sel.addRange(next); savedEditRange=next.cloneRange(); saveCurrentToHistory();
+          }
+          function applyFontFamily(value){applyInline('fontName',value)}
+          function applyFontSize(value){applyInlineStyle('fontSize',value)}
+          function applyFontColor(value){applyInline('foreColor',value)}
+          function applyTextDecoration(value){ if(value==='underline')applyInline('underline'); else if(value==='line-through')applyInline('strikeThrough'); }
+          function toggleBoldCell(){applyInline('bold')}
+          function applyTextAlign(value){
+            if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+            if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+            const sel=window.getSelection(), range=sel?.rangeCount?sel.getRangeAt(0):null, host=rangeIsInsideOneEditable(range);
+            if(!host){alert('Seleksi harus berada pada satu bagian teks.');return}
+            host.style.textAlign=value; saveCurrentToHistory();
+          }
+          function cmd(command){applyInline(command)}
+          function toggleEdit(){
+            const toolbar=document.getElementById('toolbarEdit'), area=document.getElementById('notaArea');
+            editMode=!editMode; toolbar.style.display=editMode?'block':'none'; area.classList.toggle('edit-mode',editMode); area.contentEditable=false;
+            if(!editMode){clearEditSelection();return}
+            area.querySelector('[contenteditable="true"]')?.focus();
+          }
+          '''
+          s=s[:start]+replacement+s[end:]
+          s=s.replace('.edit{outline:none}.edit:focus{background:#fff2b8}', '.edit{outline:none}.edit:focus{background:transparent}')
+          if 'NOTA_EDIT_SELECTION_FIX_V2' not in s:
+              s=s.replace('</body>','<!-- NOTA_EDIT_SELECTION_FIX_V2 -->\n</body>')
+          p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Commit patched index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Fix Edit Teks native character selection [skip ci]"
+          git push
