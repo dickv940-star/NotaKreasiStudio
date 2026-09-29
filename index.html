@@ -47,11 +47,22 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 #printerStatus.error{color:#b00000}
 button{background:#c40000;color:white;border:0;padding:8px 12px;margin:5px;cursor:pointer;font-weight:bold;border-radius:4px}
 button:hover{filter:brightness(.92)}
-.print-menu{display:inline-block;position:relative}
-.print-options{display:none;position:absolute;left:50%;top:calc(100% + 4px);transform:translateX(-50%);background:#fff;border:1px solid #ccc;border-radius:8px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:10001;min-width:190px}
-.print-options.show{display:flex;flex-direction:column}
-.print-options button{display:block;width:100%;margin:3px 0;text-align:left}
-@media(max-width:700px){.print-options{left:0;transform:none}}
+.print-menu{display:inline-block}
+.print-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:20000;align-items:center;justify-content:center;padding:20px}
+.print-modal.show{display:flex}
+.print-modal-card{position:relative;width:min(440px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 18px 60px rgba(0,0,0,.28);text-align:center}
+.print-modal-icon{font-size:42px;margin-bottom:6px}
+.print-modal-card h3{margin:4px 0 8px;font-size:24px}
+.print-modal-card p{margin:0 0 22px;color:#666;font-size:14px}
+.print-modal-close{position:absolute;right:12px;top:10px;border:0!important;background:transparent!important;color:#777!important;font-size:28px!important;padding:2px 8px!important;box-shadow:none!important}
+.print-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.print-modal-actions button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:18px 12px;border:1px solid #ddd;border-radius:12px;background:#fff;color:#222;cursor:pointer}
+.print-modal-actions button:hover{filter:brightness(.97);border-color:#999}
+.print-modal-actions span{font-size:30px}
+.print-modal-actions strong{font-size:16px}
+.print-modal-actions small{font-size:12px;color:#777}
+@media(max-width:520px){.print-modal-card{padding:24px 18px}.print-modal-actions{grid-template-columns:1fr}.print-modal-actions button{flex-direction:row;text-align:left}.print-modal-actions span{width:38px}}
+@media print{.print-modal{display:none!important}}
 #btnHistory{background:#333}.history-rename{background:#e09b00}.history-count{font-size:12px;background:#eee;color:#555;padding:3px 8px;border-radius:20px;margin-left:6px}
 #toolbarEdit{display:none;text-align:center;margin:10px}
 #historyModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;padding:30px 15px;overflow:auto}
@@ -145,9 +156,17 @@ button:hover{filter:brightness(.92)}
 <div class="buttons">
   <div class="print-menu">
     <button id="btnCetakNota" type="button">🖨 Cetak Nota</button>
-    <div id="printOptions" class="print-options" aria-hidden="true">
-      <button id="btnPrintLabel" type="button">🏷️ Printer Label</button>
-      <button id="btnPrintEpson" type="button">🖨️ Printer Epson</button>
+  </div>
+  <div id="printModal" class="print-modal" aria-hidden="true">
+    <div class="print-modal-card" role="dialog" aria-modal="true" aria-labelledby="printModalTitle">
+      <button id="closePrintModal" class="print-modal-close" type="button" aria-label="Tutup">×</button>
+      <div class="print-modal-icon">🖨️</div>
+      <h3 id="printModalTitle">Pilih Printer</h3>
+      <p>Pilih jenis printer yang akan digunakan untuk mencetak nota.</p>
+      <div class="print-modal-actions">
+        <button id="btnPrintLabel" type="button"><span>🏷️</span><strong>Printer Label</strong><small>Bluetooth / Thermal</small></button>
+        <button id="btnPrintEpson" type="button"><span>🖨️</span><strong>Printer Epson</strong><small>Cetak melalui dialog Windows</small></button>
+      </div>
     </div>
   </div>
   <button onclick="downloadJPG()">Download JPG</button>
@@ -711,16 +730,23 @@ if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
 });
 
 const btnCetakNota=document.getElementById("btnCetakNota");
-const printOptions=document.getElementById("printOptions");
-btnCetakNota?.addEventListener("click",()=>{
-  const open=printOptions?.classList.toggle("show");
-  printOptions?.setAttribute("aria-hidden",open?"false":"true");
+const printModal=document.getElementById("printModal");
+const closePrintModal=document.getElementById("closePrintModal");
+function openPrintModal(){
+  printModal?.classList.add("show");
+  printModal?.setAttribute("aria-hidden","false");
+}
+function closePrintChoiceModal(){
+  printModal?.classList.remove("show");
+  printModal?.setAttribute("aria-hidden","true");
+}
+btnCetakNota?.addEventListener("click",openPrintModal);
+closePrintModal?.addEventListener("click",closePrintChoiceModal);
+printModal?.addEventListener("click",e=>{
+  if(e.target===printModal) closePrintChoiceModal();
 });
-document.addEventListener("click",e=>{
-  if(!e.target.closest(".print-menu")){
-    printOptions?.classList.remove("show");
-    printOptions?.setAttribute("aria-hidden","true");
-  }
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape") closePrintChoiceModal();
 });
 document.getElementById("btnPrintLabel")?.addEventListener("click",async()=>{
   printOptions?.classList.remove("show");
