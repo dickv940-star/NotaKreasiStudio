@@ -129,7 +129,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V12_COM3_CANVAS_PREVIEW_20260929_7 -->
+  <!-- NOTA_PRINT_UI_V13_COM_DIRECT_PREVIEW_20260929_8 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -243,8 +243,8 @@ button:hover{filter:brightness(.92)}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-4"></script>
-<script src="js/bluetooth.js?v=20260929-4"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-5"></script>
+<script src="js/bluetooth.js?v=20260929-5"></script>
 <script>
 const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
@@ -672,7 +672,6 @@ async function printNotaDirect(){
       setPrinterStatus("Pilih port COM printer (misalnya COM3)...","");
       ok=await Bluetooth.connectSerial({baudRate:9600});
     }
-    if(!ok && window.Bluetooth) ok=await connectPrinterNota();
     if(!ok){setPrinterStatus("Printer belum terhubung","error");return;}
   }
   setPrinterStatus("Menyiapkan preview...","");
