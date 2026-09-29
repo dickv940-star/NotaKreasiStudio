@@ -30,6 +30,7 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 .edit[contenteditable="true"]{font-weight:normal}
 .edit[contenteditable="true"].bold-cell{font-weight:700}
 #notaArea [contenteditable="true"]::selection{background:#b8d8ff;color:#111}
+#notaArea .bulk-edit-selected{outline:2px solid #1976d2!important;outline-offset:-2px;background:#eaf3ff!important}
 #notaArea.edit-mode [contenteditable="true"]{cursor:text}
 #total,#sisa{cursor:text}
 #total.bold-cell,#dp.bold-cell,#sisa.bold-cell{font-weight:700}
@@ -100,7 +101,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V6_TEXT_SELECTION -->
+  <!-- NOTA_PRINT_UI_V7_USER_TEXT_ONLY -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -671,6 +672,7 @@ function toggleEdit(){
   if(editMode) document.querySelector(".edit")?.focus();
 }
 let savedEditRange=null;
+let bulkEditSelection=false;
 
 function isEditableTextNode(node){
   const el=node?.nodeType===3?node.parentElement:node;
@@ -680,6 +682,8 @@ function isEditableTextNode(node){
 function rememberEditSelection(){
   const sel=window.getSelection();
   if(!sel || sel.rangeCount===0 || sel.isCollapsed)return;
+  bulkEditSelection=false;
+  document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
   const range=sel.getRangeAt(0);
   if(isEditableTextNode(range.startContainer) || isEditableTextNode(range.endContainer)){
     savedEditRange=range.cloneRange();
@@ -690,6 +694,7 @@ function rememberEditSelection(){
 document.addEventListener("selectionchange",rememberEditSelection);
 
 function restoreEditSelection(){
+  if(bulkEditSelection)return true;
   if(!savedEditRange)return false;
   const sel=window.getSelection();
   sel.removeAllRanges();
@@ -698,6 +703,9 @@ function restoreEditSelection(){
 }
 
 function getSelectedEditableBlocks(){
+  if(bulkEditSelection){
+    return [...document.querySelectorAll('#notaArea [contenteditable="true"].bulk-edit-selected')];
+  }
   const sel=window.getSelection();
   if(!sel || sel.rangeCount===0 || sel.isCollapsed)return [];
   const range=sel.getRangeAt(0);
@@ -733,20 +741,35 @@ function updateEditSelectionInfo(){
 function selectAllEditables(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
   const editable=[...document.querySelectorAll('#notaArea [contenteditable="true"]')];
-  if(!editable.length)return;
-  const first=editable[0],last=editable[editable.length-1];
-  const range=document.createRange();
-  range.setStart(first,0);
-  range.setEnd(last,last.childNodes.length);
+  const nonEmpty=editable.filter(el=>(el.innerText||el.textContent||"").trim()!=="");
+  if(!nonEmpty.length){
+    alert("Belum ada tulisan yang Anda ketik untuk diblok.");
+    return;
+  }
+  bulkEditSelection=true;
+  savedEditRange=null;
+  editable.forEach(el=>el.classList.toggle("bulk-edit-selected",nonEmpty.includes(el)));
   const sel=window.getSelection();
   sel.removeAllRanges();
-  sel.addRange(range);
-  savedEditRange=range.cloneRange();
   updateEditSelectionInfo();
 }
 
 function applyInline(command,value){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  if(bulkEditSelection){
+    const targets=getSelectedEditableBlocks();
+    targets.forEach(el=>{
+      const range=document.createRange();
+      range.selectNodeContents(el);
+      const sel=window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand(command,false,value??null);
+    });
+    saveCurrentToHistory();
+    updateEditSelectionInfo();
+    return;
+  }
   if(!restoreEditSelection()){
     alert("Blok sebagian teks yang ingin diedit terlebih dahulu.");
     return;
@@ -766,6 +789,17 @@ function applyInline(command,value){
 
 function applyInlineStyle(property,value){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  if(bulkEditSelection){
+    getSelectedEditableBlocks().forEach(el=>{
+      const span=document.createElement("span");
+      span.style[property]=value;
+      while(el.firstChild)span.appendChild(el.firstChild);
+      el.appendChild(span);
+    });
+    saveCurrentToHistory();
+    updateEditSelectionInfo();
+    return;
+  }
   if(!restoreEditSelection()){
     alert("Blok sebagian teks yang ingin diedit terlebih dahulu.");
     return;
@@ -805,6 +839,12 @@ function toggleBoldCell(){
 
 function applyTextAlign(value){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  if(bulkEditSelection){
+    getSelectedEditableBlocks().forEach(el=>el.style.textAlign=value);
+    saveCurrentToHistory();
+    updateEditSelectionInfo();
+    return;
+  }
   if(!restoreEditSelection()){
     alert("Blok teks atau sel yang ingin diratakan terlebih dahulu.");
     return;
