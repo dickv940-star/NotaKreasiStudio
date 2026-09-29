@@ -270,10 +270,15 @@ document.addEventListener("input", function(e){
   scheduleHistorySave();
 });
 
+function formatInputAngka(el){
+  if(!el)return;
+  const raw=(el.textContent||"").trim();
+  const digits=raw.replace(/[^0-9]/g,"");
+  el.textContent=digits?formatAngka(parseInt(digits,10)):"";
+}
 document.addEventListener("blur", function(e){
   if(e.target.classList.contains("qty") || e.target.classList.contains("harga") || e.target.id==="dp"){
-    const a=angka(e.target.innerText);
-    e.target.innerText=a?formatAngka(a):"";
+    formatInputAngka(e.target);
     hitung();
     saveCurrentToHistory();
   }
