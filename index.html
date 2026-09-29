@@ -263,6 +263,7 @@ function angka(v){return Number(String(v).replace(/\./g,"").replace(/[^0-9]/g,""
 tanggal.valueAsDate = new Date();
 loadColumnWidths();
 setupColumnResize();
+pasangHitungOtomatis();
 
 document.addEventListener("input", function(e){
   hitung();
@@ -283,25 +284,33 @@ function hitung(){
   document.querySelectorAll("#bodyNota tr").forEach(row=>{
     const qtyEl=row.querySelector(".qty");
     const hargaEl=row.querySelector(".harga");
-    const cell=row.querySelector(".jumlah");
-    const qtyText=(qtyEl?.innerText||"").trim();
-    const hargaText=(hargaEl?.innerText||"").trim();
-    const qtyDigits=qtyText.replace(/[^0-9]/g,"");
-    const hargaDigits=hargaText.replace(/[^0-9]/g,"");
-    const qty=qtyDigits?Number(qtyDigits):0;
-    const harga=hargaDigits?Number(hargaDigits):0;
-    if(cell && qty>0 && harga>0){
+    const jumlahEl=row.querySelector(".jumlah");
+    if(!jumlahEl) return;
+    const qtyDigits=(qtyEl?.textContent||"").replace(/[^0-9]/g,"");
+    const hargaDigits=(hargaEl?.textContent||"").replace(/[^0-9]/g,"");
+    const qty=qtyDigits?parseInt(qtyDigits,10):0;
+    const harga=hargaDigits?parseInt(hargaDigits,10):0;
+    if(qty>0 && harga>0){
       const jumlah=qty*harga;
-      cell.textContent=formatAngka(jumlah);
+      jumlahEl.textContent=formatAngka(jumlah);
       totalNilai+=jumlah;
-    }else if(cell){
-      cell.textContent="";
+    }else{
+      jumlahEl.textContent="";
     }
   });
   total.textContent=formatAngka(totalNilai);
-  const dpText=(dp.innerText||"").trim();
-  const bayar=dpText?angka(dpText):0;
-  sisa.textContent=dpText?formatAngka(Math.max(0,totalNilai-bayar)):"";
+  const dpRaw=(dp.textContent||"").trim();
+  const bayar=dpRaw?angka(dpRaw):0;
+  sisa.textContent=dpRaw?formatAngka(Math.max(0,totalNilai-bayar)):"";
+}
+function pasangHitungOtomatis(){
+  document.querySelectorAll("#bodyNota .qty, #bodyNota .harga").forEach(el=>{
+    el.addEventListener("input",hitung);
+    el.addEventListener("keyup",hitung);
+    el.addEventListener("paste",()=>setTimeout(hitung,0));
+  });
+  dp.addEventListener("input",hitung);
+  hitung();
 }
 
 function getHistory(){
@@ -677,7 +686,7 @@ if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
   const tr=document.createElement("tr");
   tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td>';
   document.getElementById("bodyNota").appendChild(tr);
-  tr.querySelector(".edit").focus();hitung();scheduleHistorySave();
+  tr.querySelectorAll(".qty,.harga").forEach(el=>{el.addEventListener("input",hitung);el.addEventListener("keyup",hitung);el.addEventListener("paste",()=>setTimeout(hitung,0));});tr.querySelector(".edit").focus();hitung();scheduleHistorySave();
 });
 
 document.getElementById("btnConnectPrinter")?.addEventListener("click",connectPrinterNota);
