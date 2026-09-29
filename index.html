@@ -268,62 +268,22 @@ pasangHitungOtomatis();
 function isAngkaEditable(el){
   return !!el && (el.classList.contains("qty") || el.classList.contains("harga") || el.id==="dp");
 }
+function digitsOnly(value){
+  return String(value||"").replace(/[^0-9]/g,"");
+}
 function formatAngkaSaatKetik(el){
   if(!isAngkaEditable(el)) return;
-  const oldText=el.textContent||"";
-  const sel=window.getSelection();
-  let caretDigits=0;
-  if(sel && sel.rangeCount && el.contains(sel.anchorNode)){
-    const range=document.createRange();
-    range.selectNodeContents(el);
-    range.setEnd(sel.anchorNode,Math.min(sel.anchorOffset,sel.anchorNode.length||sel.anchorOffset));
-    caretDigits=(range.toString().match(/[0-9]/g)||[]).length;
-  }
-  const digits=oldText.replace(/[^0-9]/g,"");
-  const formatted=digits ? Number(digits).toLocaleString("id-ID") : "";
-  if(oldText===formatted) return;
-  el.textContent=formatted;
-  if(document.activeElement===el && formatted){
-    const node=el.firstChild;
-    if(node){
-      let pos=0,count=0;
-      while(pos<node.textContent.length && count<caretDigits){
-        if(/[0-9]/.test(node.textContent[pos])) count++;
-        pos++;
-      }
-      const range=document.createRange();
-      range.setStart(node,Math.min(pos,node.textContent.length));
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  }
+  const digits=digitsOnly(el.textContent);
+  const formatted=digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g,".") : "";
+  if(el.textContent!==formatted) el.textContent=formatted;
 }
-document.addEventListener("input",function(e){
-  const el=e.target.closest?.(".qty,.harga,#dp");
-  if(!el || !isAngkaEditable(el)) return;
-  formatAngkaSaatKetik(el);
-  hitung();
-  if(typeof scheduleHistorySave==="function") scheduleHistorySave();
-});
-document.addEventListener("blur",function(e){
-  if(!isAngkaEditable(e.target)) return;
-  formatAngkaSaatKetik(e.target);
-  hitung();
-  saveCurrentToHistory();
-},true);
-
 function hitung(){
   let totalNilai=0;
   document.querySelectorAll("#bodyNota tr").forEach(row=>{
-    const qtyEl=row.querySelector(".qty");
-    const hargaEl=row.querySelector(".harga");
+    const qty=Number(digitsOnly(row.querySelector(".qty")?.textContent));
+    const harga=Number(digitsOnly(row.querySelector(".harga")?.textContent));
     const jumlahEl=row.querySelector(".jumlah");
     if(!jumlahEl) return;
-    const qtyDigits=(qtyEl?.textContent||"").replace(/[^0-9]/g,"");
-    const hargaDigits=(hargaEl?.textContent||"").replace(/[^0-9]/g,"");
-    const qty=qtyDigits?parseInt(qtyDigits,10):0;
-    const harga=hargaDigits?parseInt(hargaDigits,10):0;
     if(qty>0 && harga>0){
       const jumlah=qty*harga;
       jumlahEl.textContent=formatAngka(jumlah);
@@ -333,19 +293,34 @@ function hitung(){
     }
   });
   total.textContent=formatAngka(totalNilai);
-  const dpRaw=(dp.textContent||"").trim();
-  const bayar=dpRaw?angka(dpRaw):0;
-  sisa.textContent=dpRaw?formatAngka(Math.max(0,totalNilai-bayar)):"";
+  const dpDigits=digitsOnly(dp.textContent);
+  const bayar=Number(dpDigits)||0;
+  sisa.textContent=dpDigits ? formatAngka(Math.max(0,totalNilai-bayar)) : "";
 }
 function pasangHitungOtomatis(){
-  document.querySelectorAll("#bodyNota .qty, #bodyNota .harga").forEach(el=>{
-    el.addEventListener("input",hitung);
-    el.addEventListener("keyup",hitung);
-    el.addEventListener("paste",()=>setTimeout(hitung,0));
-  });
-  dp.addEventListener("input",hitung);
   hitung();
 }
+document.addEventListener("input",function(e){
+  const el=e.target?.closest?.(".qty,.harga,#dp");
+  if(!el) return;
+  formatAngkaSaatKetik(el);
+  hitung();
+  if(typeof scheduleHistorySave==="function") scheduleHistorySave();
+});
+document.addEventListener("paste",function(e){
+  const el=e.target?.closest?.(".qty,.harga,#dp");
+  if(!el) return;
+  setTimeout(()=>{
+    formatAngkaSaatKetik(el);
+    hitung();
+  },0);
+});
+document.addEventListener("blur",function(e){
+  if(!isAngkaEditable(e.target)) return;
+  formatAngkaSaatKetik(e.target);
+  hitung();
+  if(typeof saveCurrentToHistory==="function") saveCurrentToHistory();
+},true);
 
 function getHistory(){
   try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return []}
