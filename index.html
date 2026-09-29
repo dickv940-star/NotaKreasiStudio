@@ -725,7 +725,11 @@ window.addEventListener("smartprint-bluetooth-disconnected",()=>{
 });
 window.addEventListener("beforeunload",saveCurrentToHistory);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeHistory()});
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(err=>console.log(err));
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(reg=>reg.unregister());
+  }).catch(()=>{});
+}
 </script>
 </body>
 </html>
