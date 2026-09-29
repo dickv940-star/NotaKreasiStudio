@@ -29,6 +29,7 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 .edit{outline:none}.edit:focus{background:#fff2b8}
 .edit[contenteditable="true"]{font-weight:normal}
 .edit[contenteditable="true"].bold-cell{font-weight:700}
+#notaArea .edit-selected{outline:3px solid #1976d2!important;outline-offset:-3px;background:#eaf3ff!important}
 #notaArea.edit-mode [contenteditable="true"]{cursor:text}
 #total,#sisa{cursor:text}
 #total.bold-cell,#dp.bold-cell,#sisa.bold-cell{font-weight:700}
@@ -196,7 +197,7 @@ button:hover{filter:brightness(.92)}
     
     <button onclick="applyTextDecoration('underline')" title="Garis bawah"><u>U</u></button>
     <button onclick="applyTextDecoration('line-through')" title="Coret"><s>S</s></button>
-    <span id="editSelectionInfo">Pilih 1 atau beberapa sel untuk diedit</span>
+    <button type="button" onclick="selectAllEditables()" title="Pilih semua">☷ Semua</button><span id="editSelectionInfo">Pilih 1 atau beberapa sel untuk diedit</span>
     <button onclick="applyTextAlign('left')" title="Rata kiri">⬅</button>
     <button onclick="applyTextAlign('center')" title="Rata tengah">⬤</button>
     <button onclick="applyTextAlign('right')" title="Rata kanan">➡</button>
@@ -601,7 +602,10 @@ async function printNotaDirect(){
   saveCurrentToHistory();
   if(!printerConnected()){
     const ok=await connectPrinterNota();
-    if(!ok)return;
+    if(!ok){
+      setPrinterStatus("Printer belum terhubung","error");
+      return;
+    }
   }
   setPrinterStatus("Menyiapkan nota...","");
   try{
@@ -677,6 +681,8 @@ function getSelectedEditable(){
   return node?.closest('[contenteditable="true"],.jumlah,#total,#dp,#sisa')||null;
 }
 function getSelectedEditables(){
+  const marked=[...document.querySelectorAll('#notaArea .edit-selected')];
+  if(marked.length)return marked;
   const all=getEditableTargets(),sel=window.getSelection();
   if(sel&&!sel.isCollapsed&&sel.rangeCount){
     const range=sel.getRangeAt(0);
@@ -693,6 +699,22 @@ function updateEditSelectionInfo(){
   info.textContent=n>1?(n+" sel dipilih"):(n===1?"1 sel dipilih":"Pilih 1 atau beberapa sel untuk diedit");
 }
 document.addEventListener("selectionchange",updateEditSelectionInfo);
+function selectAllEditables(){
+  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  getEditableTargets().forEach(el=>el.classList.add("edit-selected"));
+  updateEditSelectionInfo();
+}
+document.addEventListener("click",function(e){
+  if(!editMode)return;
+  const el=e.target.closest('#notaArea [contenteditable="true"],#notaArea .jumlah,#notaArea #total,#notaArea #dp,#notaArea #sisa');
+  if(!el)return;
+  if(e.ctrlKey||e.metaKey) el.classList.toggle("edit-selected");
+  else {
+    document.querySelectorAll('#notaArea .edit-selected').forEach(x=>x.classList.remove("edit-selected"));
+    el.classList.add("edit-selected");
+  }
+  updateEditSelectionInfo();
+});
 function applyToSelected(fn,msg){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
   const els=getSelectedEditables();
