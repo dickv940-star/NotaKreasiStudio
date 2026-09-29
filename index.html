@@ -129,7 +129,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V14_COM_PICKER_VISIBLE_PREVIEW_20260929_9 -->
+  <!-- NOTA_PRINT_UI_V15_PREVIEW_AFTER_SERIAL_20260929_10 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -726,6 +726,12 @@ async function printNotaDirect(){
     pendingLabelPrint=job;
     closePrintChoiceModal();
     openLabelPreview(job.previewUrl);
+    const previewModal=document.getElementById("labelPreviewModal");
+    if(!previewModal || !previewModal.classList.contains("show")){
+      console.error("Preview modal gagal dibuka: elemen labelPreviewModal tidak tersedia.");
+      alert("Preview tidak dapat dibuka. Silakan tekan F5 dan coba lagi.");
+      return;
+    }
     setPrinterStatus("Preview siap. Periksa nota lalu klik Print.","ok");
   }catch(e){
     console.error("Preview/cetak:",e);
