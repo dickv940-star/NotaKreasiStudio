@@ -116,11 +116,20 @@ button:hover{filter:brightness(.92)}
 
 
 .print-status{min-height:20px;margin:10px 0 0;font-size:13px;color:#666}.print-status.error{color:#b00000;font-weight:bold}.print-status.ok{color:#16803a;font-weight:bold}
+
+  .label-preview-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30000;align-items:center;justify-content:center;padding:18px}
+  .label-preview-modal.show{display:flex}
+  .label-preview-card{width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:20px;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,.35)}
+  .label-preview-card h3{margin:0 0 6px;font-size:22px}.label-preview-card p{margin:0 0 14px;color:#666;font-size:13px}
+  #labelPreviewImage{display:block;width:min(360px,90vw);height:auto;max-height:65vh;object-fit:contain;margin:0 auto 16px;border:1px solid #ddd;background:#fff}
+  .label-preview-actions{display:flex;gap:10px;justify-content:center}.label-preview-actions button{min-width:130px;margin:0;padding:11px 16px}
+  .label-preview-cancel{background:#666!important}
+  @media(max-width:520px){.label-preview-card{padding:15px}.label-preview-actions{flex-direction:column}.label-preview-actions button{width:100%}}
 </style>
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V9_CACHE_20260929_4 -->
+  <!-- NOTA_PRINT_UI_V10_LABEL_PREVIEW_20260929_5 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -613,34 +622,55 @@ async function buildNotaBitmap(){
     const y=0;
     ctx.imageSmoothingEnabled=false;
     ctx.drawImage(source,0,0,source.width,source.height,x,y,w,h);
-    return canvasToMonoBitmap(target,PRINTER_WIDTH_DOTS,PRINTER_HEIGHT_DOTS);
+    return {bitmap:canvasToMonoBitmap(target,PRINTER_WIDTH_DOTS,PRINTER_HEIGHT_DOTS),previewUrl:target.toDataURL("image/png")};
   }finally{
     noExport.forEach((el,i)=>el.style.display=old[i]);
+  }
+}
+
+let pendingLabelPrint=null;
+function openLabelPreview(previewUrl){
+  const modal=document.getElementById("labelPreviewModal"), img=document.getElementById("labelPreviewImage");
+  if(!modal||!img)return;
+  img.src=previewUrl;
+  modal.classList.add("show");
+  modal.setAttribute("aria-hidden","false");
+}
+function closeLabelPreview(){
+  const modal=document.getElementById("labelPreviewModal"), img=document.getElementById("labelPreviewImage");
+  if(modal){modal.classList.remove("show");modal.setAttribute("aria-hidden","true")}
+  if(img)img.removeAttribute("src");
+  pendingLabelPrint=null;
+}
+async function sendPendingLabelPrint(){
+  if(!pendingLabelPrint)return;
+  const job=pendingLabelPrint;
+  closeLabelPreview();
+  try{
+    setPrinterStatus("Mengirim ke printer...","");
+    const header=asciiBytes("SIZE 100 mm,150 mm\\r\\nGAP 2 mm,0 mm\\r\\nCLS\\r\\nBITMAP 0,0,799,1199,0,");
+    const footer=asciiBytes("\\r\\nPRINT 1,1\\r\\n");
+    const raw=joinBytes(header,job.bitmap,footer);
+    await Bluetooth.sendRaw(raw);
+    setPrinterStatus("Terkirim ke printer","connected");
+  }catch(e){
+    console.error("Cetak langsung:",e);setPrinterStatus("Cetak gagal","error");alert("Cetak langsung gagal: "+(e.message||e));
   }
 }
 async function printNotaDirect(){
   saveCurrentToHistory();
   if(!printerConnected()){
     const ok=await connectPrinterNota();
-    if(!ok){
-      setPrinterStatus("Printer belum terhubung","error");
-      return;
-    }
+    if(!ok){setPrinterStatus("Printer belum terhubung","error");return;}
   }
-  setPrinterStatus("Menyiapkan nota...","");
+  setPrinterStatus("Menyiapkan preview...","");
   try{
-    const bitmap=await buildNotaBitmap();
-    const header=asciiBytes("SIZE 100 mm,150 mm\r\nGAP 2 mm,0 mm\r\nCLS\r\nBITMAP 0,0,799,1199,0,");
-    const footer=asciiBytes("\r\nPRINT 1,1\r\n");
-    const raw=joinBytes(header,bitmap,footer);
-    setPrinterStatus("Mengirim ke printer...","");
-    await Bluetooth.sendRaw(raw);
-    setPrinterStatus("Terkirim ke printer","connected");
+    const job=await buildNotaBitmap();
+    pendingLabelPrint=job;
+    openLabelPreview(job.previewUrl);
+    setPrinterStatus("Preview siap. Klik Print untuk mencetak.","ok");
   }catch(e){
-    console.error("Cetak langsung:",e);
-    setPrinterStatus("Cetak gagal","error");
-    alert("Cetak langsung gagal: "+(e.message||e));
-  }finally{
+    console.error("Preview/cetak:",e);setPrinterStatus("Gagal membuat preview","error");alert("Gagal membuat preview: "+(e.message||e));
   }
 }
 
@@ -804,6 +834,11 @@ document.getElementById("btnPrintLabel")?.addEventListener("click",async()=>{
   closePrintChoiceModal();
   await printNotaDirect();
 });
+document.getElementById("btnConfirmLabelPrint")?.addEventListener("click",sendPendingLabelPrint);
+document.getElementById("btnCancelLabelPrint")?.addEventListener("click",closeLabelPreview);
+document.getElementById("labelPreviewModal")?.addEventListener("click",e=>{
+  if(e.target.id==="labelPreviewModal")closeLabelPreview();
+});
 document.getElementById("btnPrintEpson")?.addEventListener("click",()=>{
   closePrintChoiceModal();
   window.print();
@@ -826,5 +861,17 @@ if("serviceWorker" in navigator){
 </script>
 <!-- NOTA_EDIT_SELECTION_FIX_V3_CACHE_20260929_3 -->
 <!-- NOTA_EDIT_SELECTION_FIX_V2 -->
+
+  <div id="labelPreviewModal" class="label-preview-modal" aria-hidden="true">
+    <div class="label-preview-card" role="dialog" aria-modal="true" aria-labelledby="labelPreviewTitle">
+      <h3 id="labelPreviewTitle">Preview Nota</h3>
+      <p id="labelPreviewStatus">Printer tersambung. Periksa nota sebelum mencetak.</p>
+      <img id="labelPreviewImage" alt="Preview nota sebelum dicetak">
+      <div class="label-preview-actions">
+        <button id="btnConfirmLabelPrint" type="button">🖨️ Print</button>
+        <button id="btnCancelLabelPrint" class="label-preview-cancel" type="button">Batal</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
