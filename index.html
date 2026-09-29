@@ -129,7 +129,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_FIX_V19_4B2084A_COM_20260929_15 -->
+  <!-- NOTA_PRINT_FIX_V20_4B2084A_TSPL_20260929_16 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -668,14 +668,36 @@ async function sendPendingLabelPrint(){
   const job=pendingLabelPrint;
   closeLabelPreview();
   try{
-    setPrinterStatus("Mengirim ke printer...","");
-    const header=asciiBytes("SIZE 100 mm,150 mm\r\nGAP 2 mm,0 mm\r\nCLS\r\nBITMAP 0,0,100,1199,0,");
+    setPrinterStatus("Mengirim test command ke printer...","");
+    /*
+     * 4B-2084A memakai jalur COM/SPP yang sudah tersambung.
+     * Kirim job TSPL sebagai satu stream berurutan:
+     * header -> raster 799x1199 (100 byte/row) -> PRINT.
+     */
+    const header=asciiBytes(
+      "SIZE 100 mm,150 mm\r\n"+
+      "GAP 2 mm,0 mm\r\n"+
+      "DIRECTION 1\r\n"+
+      "CLS\r\n"+
+      "BITMAP 0,0,100,1199,0,"
+    );
     const footer=asciiBytes("\r\nPRINT 1,1\r\n");
     const raw=joinBytes(header,job.bitmap,footer);
+
+    console.log("[NotaPrint] 4B-2084A TSPL payload:", {
+      rasterWidthDots: 799,
+      rasterHeightDots: 1199,
+      bytesPerRow: 100,
+      bitmapBytes: job.bitmap.length,
+      totalBytes: raw.length
+    });
+
     await Bluetooth.sendRaw(raw);
-    setPrinterStatus("Terkirim ke printer","connected");
+    setPrinterStatus("Data print terkirim ke 4B-2084A","connected");
   }catch(e){
-    console.error("Cetak langsung:",e);setPrinterStatus("Cetak gagal","error");alert("Cetak langsung gagal: "+(e.message||e));
+    console.error("Cetak langsung:",e);
+    setPrinterStatus("Cetak gagal","error");
+    alert("Cetak langsung gagal: "+(e.message||e));
   }
 }
 async function printNotaDirect(){
