@@ -1,6 +1,6 @@
 /*
 =========================================================
- SmartPrint Bluetooth Engine v6.3.4
+ SmartPrint Bluetooth Engine v6.3.5
  Universal BLE Thermal Printer Transport
 =========================================================
 
@@ -1944,6 +1944,8 @@
                 }
             } catch (e) {}
         }
+
+        /* Jangan membuat sesi COM paralel jika port lama masih aktif. */
 
         try {
             log("========================================");
