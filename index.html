@@ -281,12 +281,19 @@ document.addEventListener("blur", function(e){
 function hitung(){
   let totalNilai=0;
   document.querySelectorAll("#bodyNota tr").forEach(row=>{
-    const qty=angka(row.querySelector(".qty")?.innerText);
-    const harga=angka(row.querySelector(".harga")?.innerText);
-    const jumlah=qty*harga;
+    const qtyText=(row.querySelector(".qty")?.innerText||"").trim();
+    const hargaText=(row.querySelector(".harga")?.innerText||"").trim();
+    const qty=angka(qtyText);
+    const harga=angka(hargaText);
     const cell=row.querySelector(".jumlah");
-    if(cell) cell.innerText=jumlah?formatAngka(jumlah):"";
-    totalNilai+=jumlah;
+    const validQty=/^[0-9][0-9.]*$/.test(qtyText);
+    const validHarga=/^[0-9][0-9.]*$/.test(hargaText);
+    if(cell && validQty && validHarga && qty>0 && harga>0){
+      cell.innerText=formatAngka(qty*harga);
+      totalNilai+=qty*harga;
+    }else if(cell && !cell.matches(":focus")){
+      cell.innerText="";
+    }
   });
   total.innerText=formatAngka(totalNilai);
   const bayar=angka(dp.innerText);
