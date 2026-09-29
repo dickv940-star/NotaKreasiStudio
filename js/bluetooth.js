@@ -1938,60 +1938,105 @@
     async function connectSerial(options) {
 
         if (!isSerialSupported()) {
-
-            throw new Error(
-
-                "Web Serial tidak didukung browser."
-
-            );
-
+            throw new Error("Web Serial tidak didukung browser.");
         }
 
         options = options || {};
-
-        const baudRate = Number(options.baudRate) || 9600;
+        const requestedBaud = Number(options.baudRate) || 9600;
 
         if (serialPort) {
-
             try {
-
                 if (serialPort.readable || serialPort.writable) {
-
                     log("Serial printer sudah terhubung.");
-
                     return true;
-
                 }
-
             } catch (e) {}
-
         }
 
         try {
-
             log("========================================");
             log("BLUETOOTH CLASSIC / SERIAL DISCOVERY");
             log("Mode: Windows COM / Bluetooth SPP");
-            log("Baud rate:", baudRate);
+            log("Baud rate utama:", requestedBaud);
             log("Membuka Serial Port picker...");
-            
-            serialPort = await navigator.serial.requestPort();
 
-            if (!serialPort) {
+            const selectedPort = await navigator.serial.requestPort();
 
+            if (!selectedPort) {
                 throw new Error("Tidak ada COM port yang dipilih.");
-
             }
 
-            const info = serialPort.getInfo
-                ? serialPort.getInfo()
+            const info = selectedPort.getInfo
+                ? selectedPort.getInfo()
                 : {};
 
             log("PRINTER COM TERPILIH:", info);
 
             /*
-             * Simpan posisi port yang dipilih. Pada koneksi berikutnya
-             * connectSerialAuto() akan mencoba port ini tanpa picker.
+             * Jangan simpan port sebelum benar-benar berhasil dibuka.
+             * Jika open() gagal, port lama tidak boleh dipakai lagi.
+             */
+            const baudCandidates = [];
+            [requestedBaud, 9600, 115200].forEach(function(rate) {
+                if (rate > 0 && baudCandidates.indexOf(rate) === -1) {
+                    baudCandidates.push(rate);
+                }
+            });
+
+            let opened = false;
+            let lastError = null;
+            let usedBaud = requestedBaud;
+
+            for (const baudRate of baudCandidates) {
+                try {
+                    log("Mencoba membuka COM dengan baud:", baudRate);
+
+                    await selectedPort.open({
+                        baudRate: baudRate,
+                        dataBits: Number(options.dataBits) || 8,
+                        stopBits: Number(options.stopBits) || 1,
+                        parity: options.parity || "none",
+                        flowControl: options.flowControl || "none"
+                    });
+
+                    opened = true;
+                    usedBaud = baudRate;
+                    break;
+
+                } catch (err) {
+                    lastError = err;
+                    warn(
+                        "Gagal membuka COM pada baud " + baudRate + ":",
+                        err
+                    );
+
+                    try {
+                        if (selectedPort.readable || selectedPort.writable) {
+                            await selectedPort.close();
+                        }
+                    } catch (closeErr) {}
+                }
+            }
+
+            if (!opened) {
+                serialPort = null;
+
+                const detail = lastError && lastError.message
+                    ? lastError.message
+                    : "Port COM tidak dapat dibuka.";
+
+                throw new Error(
+                    "COM printer tidak dapat dibuka. " +
+                    detail +
+                    " Pastikan printer tidak sedang digunakan aplikasi lain."
+                );
+            }
+
+            serialPort = selectedPort;
+            serialWriteQueue = Promise.resolve();
+
+            /*
+             * Simpan hanya setelah open() berhasil.
              */
             try {
                 const grantedPorts = await navigator.serial.getPorts();
@@ -2011,98 +2056,53 @@
                 warn("Gagal menyimpan port printer:", e);
             }
 
-            await serialPort.open({
-
-                baudRate: baudRate,
-
-                dataBits: Number(options.dataBits) || 8,
-
-                stopBits: Number(options.stopBits) || 1,
-
-                parity: options.parity || "none",
-
-                flowControl: options.flowControl || "none"
-
-            });
-
             log("SERIAL CONNECTED");
+            log("Baud aktif:", usedBaud);
 
             dispatch("connected", {
-
                 type: "SERIAL",
-
                 port: serialPort,
-
                 info: info,
-
-                baudRate: baudRate
-
+                baudRate: usedBaud
             });
 
             dispatch("status", {
-
                 connected: true,
-
                 type: "SERIAL",
-
                 port: serialPort,
-
                 info: info,
-
-                baudRate: baudRate
-
+                baudRate: usedBaud
             });
 
             return true;
 
-        }
-
-        catch (err) {
+        } catch (err) {
 
             serialPort = null;
 
             if (
-
                 err &&
-
                 (
-
                     err.name === "NotFoundError" ||
-
                     err.name === "AbortError"
-
                 )
-
             ) {
-
                 log("Serial/COM picker dibatalkan.");
-
                 dispatch("cancelled", { error: err });
-
                 return false;
-
             }
 
             error("Serial connection error:", err);
-
             dispatch("error", {
-
                 error: err,
-
                 message: err && err.message
-
                     ? err.message
-
                     : String(err)
-
             });
 
             return false;
-
         }
-
     }
-
 
     /*
     =====================================================
