@@ -29,6 +29,9 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 .edit{outline:none}.edit:focus{background:#fff2b8}
 .edit[contenteditable="true"]{font-weight:normal}
 .edit[contenteditable="true"].bold-cell{font-weight:700}
+#notaArea.edit-mode [contenteditable="true"]{cursor:text}
+#toolbarEdit{display:none;text-align:center;margin:10px}
+#toolbarEdit button.active{outline:2px solid #000;outline-offset:1px}
 .footer{display:flex}.warning{width:60%;padding:12px}.warning h2{color:red}.warning h3{font-size:13px;font-weight:normal;margin-top:20px}
 .payment{width:40%;position:relative}
 #lunasBox{display:none;position:absolute;top:42%;left:52%;transform:translate(-50%,-50%) rotate(-12deg);z-index:9999;pointer-events:none}
@@ -436,12 +439,24 @@ function installApp(){
   if(deferredPrompt){deferredPrompt.prompt();deferredPrompt=null}
   else alert("Install belum tersedia");
 }
+let editMode=false;
 function toggleEdit(){
   const toolbar=document.getElementById("toolbarEdit");
   const area=document.getElementById("notaArea");
-  const isHidden=toolbar.style.display==="none"||toolbar.style.display==="";
-  toolbar.style.display=isHidden?"block":"none";
-  area.contentEditable=isHidden?"true":"false";
+  editMode=!editMode;
+  toolbar.style.display=editMode?"block":"none";
+  area.classList.toggle("edit-mode",editMode);
+  area.contentEditable=false;
+  if(editMode) document.querySelector(".edit")?.focus();
+}
+function toggleBoldCell(){
+  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  const active=document.activeElement;
+  const cell=active&&active.matches("[contenteditable='true']")?active:window.getSelection()?.anchorNode?.parentElement?.closest("[contenteditable='true']");
+  if(!cell){alert("Klik teks pada kolom yang ingin dibuat Bold.");return}
+  cell.classList.toggle("bold-cell");
+  document.getElementById("btnBoldCell")?.classList.toggle("active",cell.classList.contains("bold-cell"));
+  saveCurrentToHistory();
 }
 let lastNota=Number(localStorage.getItem("lastNota"))||0;
 function buatNomor(){lastNota++;localStorage.setItem("lastNota",lastNota);return String(lastNota).padStart(4,"0")}
