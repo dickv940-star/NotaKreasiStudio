@@ -1,4 +1,4 @@
-const CACHE_NAME = "kreasi-studio-v1";
+const CACHE_NAME = "kreasi-studio-v2";
 
 const FILES_TO_CACHE = [
   "index.html",
@@ -10,6 +10,7 @@ const FILES_TO_CACHE = [
 
 // INSTALL
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(FILES_TO_CACHE);
@@ -19,6 +20,7 @@ self.addEventListener("install", (event) => {
 
 // ACTIVATE
 self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
