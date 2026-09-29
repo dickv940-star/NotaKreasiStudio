@@ -34,6 +34,8 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 #total.bold-cell,#dp.bold-cell,#sisa.bold-cell{font-weight:700}
 #toolbarEdit{display:none;text-align:center;margin:10px}
 #toolbarEdit button.active{outline:2px solid #000;outline-offset:1px}
+.edit-toolbar-control{padding:6px 8px;margin:5px;border:1px solid #bbb;border-radius:4px;background:#fff;color:#222;font-weight:normal}
+#fontColor{width:42px;height:34px;padding:2px;vertical-align:middle}
 .footer{display:flex}.warning{width:60%;padding:12px}.warning h2{color:red}.warning h3{font-size:13px;font-weight:normal;margin-top:20px}
 .payment{width:40%;position:relative}
 #lunasBox{display:none;position:absolute;top:42%;left:52%;transform:translate(-50%,-50%) rotate(-12deg);z-index:9999;pointer-events:none}
@@ -142,6 +144,17 @@ button:hover{filter:brightness(.92)}
 
   <div id="toolbarEdit">
     <button id="btnBoldCell" onclick="toggleBoldCell()"><b>B</b></button>
+    <label class="edit-toolbar-control">Font
+      <select id="fontFamily" onchange="applyFontFamily(this.value)">
+        <option value="Arial">Arial</option><option value="Helvetica">Helvetica</option><option value="Times New Roman">Times New Roman</option><option value="Georgia">Georgia</option><option value="Verdana">Verdana</option><option value="Courier New">Courier New</option>
+      </select>
+    </label>
+    <label class="edit-toolbar-control">Ukuran
+      <select id="fontSize" onchange="applyFontSize(this.value)">
+        <option value="12px">12</option><option value="14px">14</option><option value="16px" selected>16</option><option value="18px">18</option><option value="20px">20</option><option value="24px">24</option><option value="28px">28</option><option value="32px">32</option><option value="40px">40</option>
+      </select>
+    </label>
+    <label class="edit-toolbar-control">Warna <input id="fontColor" type="color" value="#000000" onchange="applyFontColor(this.value)"></label>
     <button onclick="cmd('italic')"><i>I</i></button>
     <button onclick="cmd('justifyLeft')">⬅</button>
     <button onclick="cmd('justifyCenter')">⬤</button>
@@ -275,7 +288,7 @@ function snapshotNota(){
     selector:el.id?("#"+el.id):null,
     html:el.innerHTML
   }));
-  const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll("td[contenteditable=\"true\"]")].map(el=>({html:el.innerHTML,bold:el.classList.contains("bold-cell")})));
+  const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll("td[contenteditable=\"true\"]")].map(el=>({html:el.innerHTML,bold:el.classList.contains("bold-cell"),style:el.getAttribute("style")||""})));
   return {
     id:editingHistoryId || Date.now().toString(),
     nama:"",
@@ -287,9 +300,12 @@ function snapshotNota(){
     rows,
     dp:dp.innerHTML,
     dpBold:dp.classList.contains("bold-cell"),
+    dpStyle:dp.getAttribute("style")||"",
     lunas:document.getElementById("lunasBox").style.display==="block",
     totalBold:total.classList.contains("bold-cell"),
-    sisaBold:sisa.classList.contains("bold-cell")
+    sisaBold:sisa.classList.contains("bold-cell"),
+    totalStyle:total.getAttribute("style")||"",
+    sisaStyle:sisa.getAttribute("style")||""
   };
 }
 function hasNotaData(){
@@ -371,7 +387,7 @@ function loadHistory(index){
   (item.rows||[]).forEach(rowData=>{
     const tr=document.createElement("tr");
     tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="edit jumlah" contenteditable="true"></td>';
-    tr.querySelectorAll(".edit").forEach((el,i)=>{const v=rowData[i]; el.innerHTML=typeof v==="object"?(v.html||""):(v||""); if(typeof v==="object"&&v.bold)el.classList.add("bold-cell");});
+    tr.querySelectorAll(".edit").forEach((el,i)=>{const v=rowData[i]; el.innerHTML=typeof v==="object"?(v.html||""):(v||""); if(typeof v==="object"&&v.bold)el.classList.add("bold-cell"); if(typeof v==="object"&&v.style)el.setAttribute("style",v.style);});
     tbody.appendChild(tr);
   });
   if(!item.rows || !item.rows.length){
@@ -379,10 +395,13 @@ function loadHistory(index){
   }
   dp.innerHTML=item.dp||"";
   if(item.dpBold)dp.classList.add("bold-cell"); else dp.classList.remove("bold-cell");
+  if(item.dpStyle)dp.setAttribute("style",item.dpStyle); else dp.removeAttribute("style");
   document.getElementById("lunasBox").style.display=item.lunas?"block":"none";
   hitung();
   total.classList.toggle("bold-cell",!!item.totalBold);
   sisa.classList.toggle("bold-cell",!!item.sisaBold);
+  if(item.totalStyle)total.setAttribute("style",item.totalStyle); else total.removeAttribute("style");
+  if(item.sisaStyle)sisa.setAttribute("style",item.sisaStyle); else sisa.removeAttribute("style");
   closeHistory();
   scheduleHistorySave();
   window.scrollTo({top:0,behavior:"smooth"});
@@ -456,6 +475,27 @@ function toggleEdit(){
   area.classList.toggle("edit-mode",editMode);
   area.contentEditable=false;
   if(editMode) document.querySelector(".edit")?.focus();
+}
+function getSelectedEditable(){
+  const active=document.activeElement;
+  if(active&&active.matches("[contenteditable='true']"))return active;
+  const node=window.getSelection()?.anchorNode?.parentElement;
+  return node?.closest("[contenteditable='true'],#total,#dp,#sisa")||null;
+}
+function applyFontFamily(value){
+  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diubah.");return}
+  el.style.fontFamily=value; saveCurrentToHistory();
+}
+function applyFontSize(value){
+  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diubah.");return}
+  el.style.fontSize=value; saveCurrentToHistory();
+}
+function applyFontColor(value){
+  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
+  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diubah.");return}
+  el.style.color=value; saveCurrentToHistory();
 }
 function toggleBoldCell(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
