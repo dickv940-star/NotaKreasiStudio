@@ -92,11 +92,14 @@ button:hover{filter:brightness(.92)}
  #tambahBaris{display:none}
 }
 .legacy-print-control,#btnPrintDirect,#btnConnectPrinter,#printerStatus,.printer-tools{display:none!important}
+
+#editSelectionInfo{display:inline-block;padding:6px 10px;margin:5px;border:1px dashed #aaa;border-radius:4px;background:#fff;color:#555;font-size:12px}
+.print-status{min-height:20px;margin:10px 0 0;font-size:13px;color:#666}.print-status.error{color:#b00000;font-weight:bold}.print-status.ok{color:#16803a;font-weight:bold}
 </style>
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V4 -->
+  <!-- NOTA_PRINT_UI_V5 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -161,6 +164,7 @@ button:hover{filter:brightness(.92)}
       <div class="print-modal-icon">🖨️</div>
       <h3 id="printModalTitle">Pilih Printer</h3>
       <p>Pilih jenis printer yang akan digunakan untuk mencetak nota.</p>
+      <div id="printStatus" class="print-status">Siap memilih printer.</div>
       <div class="print-modal-actions">
         <button id="btnPrintLabel" type="button"><span>🏷️</span><strong>Printer Label</strong><small>Bluetooth / Thermal</small></button>
         <button id="btnPrintEpson" type="button"><span>🖨️</span><strong>Printer Epson</strong><small>Cetak melalui dialog Windows</small></button>
@@ -192,6 +196,7 @@ button:hover{filter:brightness(.92)}
     
     <button onclick="applyTextDecoration('underline')" title="Garis bawah"><u>U</u></button>
     <button onclick="applyTextDecoration('line-through')" title="Coret"><s>S</s></button>
+    <span id="editSelectionInfo">Pilih 1 atau beberapa sel untuk diedit</span>
     <button onclick="applyTextAlign('left')" title="Rata kiri">⬅</button>
     <button onclick="applyTextAlign('center')" title="Rata tengah">⬤</button>
     <button onclick="applyTextAlign('right')" title="Rata kanan">➡</button>
@@ -510,27 +515,46 @@ function printerConnected(){
   return !!(window.Bluetooth && typeof Bluetooth.isConnected==="function" && Bluetooth.isConnected());
 }
 async function connectPrinterNota(){
+  const status=document.getElementById("printStatus");
+  const setUI=(text,type)=>{
+    setPrinterStatus(text,type);
+    if(status){status.textContent=text;status.className="print-status "+(type||"")}
+  };
   if(!window.Bluetooth){
-    setPrinterStatus("Bluetooth tidak tersedia","error");
+    setUI("Bluetooth engine tidak tersedia","error");
     alert("Engine Bluetooth tidak tersedia di browser ini.");
     return false;
   }
   try{
-    setPrinterStatus("Menghubungkan...","");
-    let result;
-    if(typeof Bluetooth.connectUser==="function") result=await Bluetooth.connectUser();
-    else if(typeof Bluetooth.connect==="function") result=await Bluetooth.connect();
-    if(!printerConnected()) throw new Error("Printer belum terhubung.");
-    const name=(typeof Bluetooth.getDeviceName==="function"&&Bluetooth.getDeviceName())||"Printer";
-    setPrinterStatus("Terhubung: "+name,"connected");
-    return true;
+    setUI("Membuka Bluetooth Picker...","");
+    if(typeof Bluetooth.connectUser==="function") await Bluetooth.connectUser();
+    else if(typeof Bluetooth.connect==="function") await Bluetooth.connect();
+    if(printerConnected()){
+      const name=(typeof Bluetooth.getDeviceName==="function"&&Bluetooth.getDeviceName())||"Printer BLE";
+      setUI("Terhubung: "+name,"ok");
+      return true;
+    }
+    throw new Error("Printer BLE belum terhubung.");
   }catch(e){
-    console.error("Koneksi printer:",e);
-    setPrinterStatus("Belum terhubung","error");
-    if(e.name!=="AbortError"&&e.name!=="NotFoundError")alert("Gagal menghubungkan printer: "+(e.message||e));
+    console.error("Koneksi printer BLE:",e);
+    setUI("BLE tidak menemukan printer. Mencoba Bluetooth Classic/COM...","");
+    if(typeof Bluetooth.connectSerialAuto==="function"){
+      try{
+        const ok=await Bluetooth.connectSerialAuto({baudRate:9600});
+        if(ok&&printerConnected()){
+          setUI("Terhubung melalui Bluetooth Classic/COM","ok");
+          return true;
+        }
+      }catch(serialErr){console.error("Koneksi Bluetooth Classic/COM:",serialErr)}
+    }
+    setUI("Printer tidak terhubung","error");
+    if(e.name!=="AbortError"&&e.name!=="NotFoundError"){
+      alert("Printer tidak dapat terhubung. Jika printer thermal menggunakan Bluetooth Classic, pilih port COM printer pada picker berikutnya.");
+    }
     return false;
   }
 }
+
 function canvasToMonoBitmap(canvas,width,height){
   const src=canvas.getContext("2d").getImageData(0,0,canvas.width,canvas.height).data;
   const out=new Uint8Array(Math.ceil(width/8)*height);
@@ -642,56 +666,50 @@ function toggleEdit(){
   area.contentEditable=false;
   if(editMode) document.querySelector(".edit")?.focus();
 }
+function getEditableTargets(){
+  return [...document.querySelectorAll('#notaArea [contenteditable="true"],#notaArea .jumlah,#notaArea #total,#notaArea #dp,#notaArea #sisa')];
+}
 function getSelectedEditable(){
   const active=document.activeElement;
-  if(active&&active.matches("[contenteditable='true']"))return active;
-  const node=window.getSelection()?.anchorNode?.parentElement;
-  return node?.closest("[contenteditable='true'],#total,#dp,#sisa")||null;
+  if(active&&active.matches("[contenteditable='true'],.jumlah,#total,#dp,#sisa"))return active;
+  const sel=window.getSelection();
+  const node=sel?.anchorNode?.parentElement;
+  return node?.closest('[contenteditable="true"],.jumlah,#total,#dp,#sisa')||null;
 }
-function applyFontFamily(value){
-  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diubah.");return}
-  el.style.fontFamily=value; saveCurrentToHistory();
+function getSelectedEditables(){
+  const all=getEditableTargets(),sel=window.getSelection();
+  if(sel&&!sel.isCollapsed&&sel.rangeCount){
+    const range=sel.getRangeAt(0);
+    const hit=all.filter(el=>{try{return range.intersectsNode(el)}catch(e){return false}});
+    if(hit.length)return hit;
+  }
+  const one=getSelectedEditable();
+  return one?[one]:[];
 }
-function applyFontSize(value){
-  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diubah.");return}
-  el.style.fontSize=value; saveCurrentToHistory();
+function updateEditSelectionInfo(){
+  const info=document.getElementById("editSelectionInfo");
+  if(!info)return;
+  const n=getSelectedEditables().length;
+  info.textContent=n>1?(n+" sel dipilih"):(n===1?"1 sel dipilih":"Pilih 1 atau beberapa sel untuk diedit");
 }
-function applyTextAlign(value){
+document.addEventListener("selectionchange",updateEditSelectionInfo);
+function applyToSelected(fn,msg){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diatur.");return}
-  el.style.textAlign=value; saveCurrentToHistory();
-}
-function applyTextDecoration(value){
-  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diatur.");return}
-  const current=el.style.textDecoration;
-  el.style.textDecoration=current===value?"none":value;
+  const els=getSelectedEditables();
+  if(!els.length){alert(msg);return}
+  els.forEach(fn);
   saveCurrentToHistory();
 }
-function applyFontColor(value){
-  if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  const el=getSelectedEditable(); if(!el){alert("Klik tulisan yang ingin diubah.");return}
-  el.style.color=value; saveCurrentToHistory();
-}
+function applyFontFamily(value){applyToSelected(el=>el.style.fontFamily=value,"Pilih tulisan yang ingin diubah.")}
+function applyFontSize(value){applyToSelected(el=>el.style.fontSize=value,"Pilih tulisan yang ingin diubah.")}
+function applyTextAlign(value){applyToSelected(el=>el.style.textAlign=value,"Pilih tulisan yang ingin diatur.")}
+function applyTextDecoration(value){applyToSelected(el=>{el.style.textDecoration=el.style.textDecoration===value?"none":value},"Pilih tulisan yang ingin diatur.")}
+function applyFontColor(value){applyToSelected(el=>el.style.color=value,"Pilih tulisan yang ingin diubah.")}
 function toggleBoldCell(){
   if(!editMode){alert("Klik Edit Teks terlebih dahulu.");return}
-  const active=document.activeElement;
-  const cell=active&&active.matches("[contenteditable='true']")?active:window.getSelection()?.anchorNode?.parentElement?.closest("[contenteditable='true']");
-  if(!cell){
-    const node=window.getSelection()?.anchorNode?.parentElement;
-    const special=node?.closest("#total,#dp,#sisa");
-    if(special && notaArea.contains(special)){
-      special.classList.toggle("bold-cell");
-      document.getElementById("btnBoldCell")?.classList.toggle("active",special.classList.contains("bold-cell"));
-      saveCurrentToHistory();
-      return;
-    }
-    alert("Klik teks pada kolom yang ingin dibuat Bold.");return
-  }
-  cell.classList.toggle("bold-cell");
-  document.getElementById("btnBoldCell")?.classList.toggle("active",cell.classList.contains("bold-cell"));
+  const els=getSelectedEditables();
+  if(!els.length){alert("Pilih tulisan yang ingin dibuat Bold.");return}
+  els.forEach(el=>el.classList.toggle("bold-cell"));
   saveCurrentToHistory();
 }
 let lastNota=Number(localStorage.getItem("lastNota"))||0;
