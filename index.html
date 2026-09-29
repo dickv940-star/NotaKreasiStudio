@@ -117,14 +117,20 @@ button:hover{filter:brightness(.92)}
 
 .print-status{min-height:20px;margin:10px 0 0;font-size:13px;color:#666}.print-status.error{color:#b00000;font-weight:bold}.print-status.ok{color:#16803a;font-weight:bold}
 
-  .label-preview-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30000;align-items:center;justify-content:center;padding:18px}
+  .label-preview-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30000;align-items:center;justify-content:center;padding:12px}
   .label-preview-modal.show{display:flex}
-  .label-preview-card{width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:20px;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,.35)}
-  .label-preview-card h3{margin:0 0 6px;font-size:22px}.label-preview-card p{margin:0 0 14px;color:#666;font-size:13px}
-  #labelPreviewCanvas{display:block;width:min(360px,90vw);height:auto;max-height:65vh;object-fit:contain;margin:0 auto 16px;border:1px solid #ddd;background:#fff}
+  .label-preview-card{width:min(620px,100%);max-height:96vh;overflow:auto;background:#fff;border-radius:16px;padding:18px;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,.35)}
+  .label-preview-card h3{margin:0 0 6px;font-size:22px}.label-preview-card p{margin:0 0 12px;color:#666;font-size:13px}
+  .label-preview-workspace{display:flex;justify-content:center;overflow:auto;padding:8px;background:#f2f2f2;border:1px solid #ddd;border-radius:10px}
+  #labelPreviewCanvas{display:block;width:min(430px,88vw);height:auto;max-height:68vh;object-fit:contain;margin:0 auto;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);touch-action:none;cursor:grab}
+  #labelPreviewCanvas.dragging{cursor:grabbing}
+  .label-position-controls{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center;margin:10px 0}
+  .label-position-controls label{font-size:12px;color:#555;text-align:left}.label-position-controls input{width:100%;padding:7px;border:1px solid #ccc;border-radius:6px}
+  .label-position-controls button{margin:0;padding:8px 10px;background:#555}
+  .label-drag-help{font-size:12px;color:#666;margin:4px 0 12px}
   .label-preview-actions{display:flex;gap:10px;justify-content:center}.label-preview-actions button{min-width:130px;margin:0;padding:11px 16px}
   .label-preview-cancel{background:#666!important}
-  @media(max-width:520px){.label-preview-card{padding:15px}.label-preview-actions{flex-direction:column}.label-preview-actions button{width:100%}}
+  @media(max-width:520px){.label-preview-card{padding:12px}.label-position-controls{grid-template-columns:1fr 1fr}.label-position-controls button{width:100%}.label-preview-actions{flex-direction:column}.label-preview-actions button{width:100%}}
 </style>
 </head>
 
@@ -246,8 +252,17 @@ button:hover{filter:brightness(.92)}
   <div id="labelPreviewModal" class="label-preview-modal" aria-hidden="true">
     <div class="label-preview-card" role="dialog" aria-modal="true" aria-labelledby="labelPreviewTitle">
       <h3 id="labelPreviewTitle">Preview Nota</h3>
-      <p id="labelPreviewStatus">Printer tersambung. Periksa nota sebelum mencetak.</p>
-      <canvas id="labelPreviewCanvas" width="799" height="1199" aria-label="Canvas preview nota sebelum dicetak"></canvas>
+      <p id="labelPreviewStatus">Printer tersambung. Geser nota pada area putih untuk mengatur posisi.</p>
+      <div class="label-preview-workspace">
+        <canvas id="labelPreviewCanvas" width="799" height="1199" aria-label="Canvas preview nota sebelum dicetak"></canvas>
+      </div>
+      <div class="label-position-controls">
+        <label>X (dot)<input id="labelPosX" type="number" min="0" max="798" step="1" value="0"></label>
+        <label>Y (dot)<input id="labelPosY" type="number" min="0" max="1198" step="1" value="0"></label>
+        <label>Skala<input id="labelScale" type="number" min="10" max="100" step="1" value="100"></label>
+        <button id="btnResetLabelPosition" type="button">↺ Reset</button>
+      </div>
+      <div class="label-drag-help">Drag / geser nota langsung pada preview. X dan Y menggunakan satuan dot printer 799×1199.</div>
       <div class="label-preview-actions">
         <button id="btnConfirmLabelPrint" type="button">🖨️ Print</button>
         <button id="btnCancelLabelPrint" class="label-preview-cancel" type="button">Batal</button>
@@ -256,7 +271,7 @@ button:hover{filter:brightness(.92)}
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-8"></script>
-<script src="js/bluetooth.js?v=20260929-14"></script>
+<script src="js/bluetooth.js?v=20260929-15"></script>
 <script>
 const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
@@ -628,36 +643,111 @@ async function buildNotaBitmap(){
     const source=await html2canvas(notaArea,{scale:2,useCORS:true,allowTaint:false,backgroundColor:"#fff",logging:false});
     const target=document.createElement("canvas");
     target.width=PRINTER_WIDTH_DOTS; target.height=PRINTER_HEIGHT_DOTS;
-    const ctx=target.getContext("2d");
-    ctx.fillStyle="#fff";ctx.fillRect(0,0,target.width,target.height);
     const scale=Math.min(target.width/source.width,target.height/source.height);
     const w=Math.max(1,Math.floor(source.width*scale));
     const h=Math.max(1,Math.floor(source.height*scale));
     const x=Math.floor((target.width-w)/2);
     const y=0;
-    ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(source,0,0,source.width,source.height,x,y,w,h);
-    return {bitmap:canvasToMonoBitmap(target,PRINTER_WIDTH_DOTS,PRINTER_HEIGHT_DOTS),previewUrl:target.toDataURL("image/png")};
+    return {
+      sourceCanvas:source,
+      x,y,w,h,
+      minX:0,minY:0,maxX:Math.max(0,target.width-w),maxY:Math.max(0,target.height-h),
+      scale:1,
+      renderCanvas:target,
+      bitmap:null,
+      previewUrl:null
+    };
   }finally{
     noExport.forEach((el,i)=>el.style.display=old[i]);
   }
 }
-
+function renderLabelJob(job){
+  if(!job)return;
+  const canvas=job.renderCanvas || document.createElement("canvas");
+  canvas.width=PRINTER_WIDTH_DOTS; canvas.height=PRINTER_HEIGHT_DOTS;
+  const ctx=canvas.getContext("2d");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(job.sourceCanvas,0,0,job.sourceCanvas.width,job.sourceCanvas.height,Math.round(job.x),Math.round(job.y),Math.round(job.w*job.scale),Math.round(job.h*job.scale));
+  job.x=Math.max(0,Math.min(job.x,PRINTER_WIDTH_DOTS-Math.round(job.w*job.scale)));
+  job.y=Math.max(0,Math.min(job.y,PRINTER_HEIGHT_DOTS-Math.round(job.h*job.scale)));
+  job.bitmap=canvasToMonoBitmap(canvas,PRINTER_WIDTH_DOTS,PRINTER_HEIGHT_DOTS);
+  job.previewUrl=canvas.toDataURL("image/png");
+  const xEl=document.getElementById("labelPosX"), yEl=document.getElementById("labelPosY"), sEl=document.getElementById("labelScale");
+  if(xEl)xEl.value=Math.round(job.x);
+  if(yEl)yEl.value=Math.round(job.y);
+  if(sEl)sEl.value=Math.round(job.scale*100);
+}
 let pendingLabelPrint=null;
-function openLabelPreview(previewUrl){
+let labelDragState=null;
+function openLabelPreview(job){
   const modal=document.getElementById("labelPreviewModal"), canvas=document.getElementById("labelPreviewCanvas");
   if(!modal||!canvas)return;
+  renderLabelJob(job);
   const ctx=canvas.getContext("2d");
-  const img=new Image();
-  img.onload=()=>{
-    canvas.width=799;canvas.height=1199;
-    ctx.imageSmoothingEnabled=false;
-    ctx.clearRect(0,0,799,1199);
-    ctx.drawImage(img,0,0,799,1199);
-  };
-  img.src=previewUrl;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(job.renderCanvas,0,0);
   modal.classList.add("show");
   modal.setAttribute("aria-hidden","false");
+  setupLabelPositionControls();
+}
+function closeLabelPreview(){
+  const modal=document.getElementById("labelPreviewModal");
+  if(modal){modal.classList.remove("show");modal.setAttribute("aria-hidden","true")}
+  pendingLabelPrint=null;
+}
+function setupLabelPositionControls(){
+  const canvas=document.getElementById("labelPreviewCanvas");
+  const xEl=document.getElementById("labelPosX"), yEl=document.getElementById("labelPosY"), sEl=document.getElementById("labelScale");
+  const reset=document.getElementById("btnResetLabelPosition");
+  if(!canvas||!pendingLabelPrint)return;
+  const job=pendingLabelPrint;
+  const apply=()=>{
+    const requestedScale=Math.max(.1,Math.min(1,Number(sEl?.value||100)/100));
+    const newW=Math.max(1,Math.round(job.w*requestedScale));
+    const newH=Math.max(1,Math.round(job.h*requestedScale));
+    job.scale=requestedScale;
+    job.x=Math.max(0,Math.min(Number(xEl?.value||0),PRINTER_WIDTH_DOTS-newW));
+    job.y=Math.max(0,Math.min(Number(yEl?.value||0),PRINTER_HEIGHT_DOTS-newH));
+    job.maxX=Math.max(0,PRINTER_WIDTH_DOTS-newW); job.maxY=Math.max(0,PRINTER_HEIGHT_DOTS-newH);
+    renderLabelJob(job);
+    canvas.getContext("2d").drawImage(job.renderCanvas,0,0);
+  };
+  [xEl,yEl,sEl].forEach(el=>el&&el.addEventListener("change",apply));
+  if(reset)reset.onclick=()=>{
+    job.scale=1; job.x=Math.floor((PRINTER_WIDTH_DOTS-job.w)/2); job.y=0;
+    renderLabelJob(job); canvas.getContext("2d").drawImage(job.renderCanvas,0,0);
+  };
+  const point=e=>{
+    const r=canvas.getBoundingClientRect();
+    const sx=PRINTER_WIDTH_DOTS/r.width, sy=PRINTER_HEIGHT_DOTS/r.height;
+    return {x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};
+  };
+  const down=e=>{
+    if(e.button!==undefined && e.button!==0)return;
+    e.preventDefault(); canvas.setPointerCapture?.(e.pointerId);
+    const p=point(e); labelDragState={pointerId:e.pointerId,startX:p.x,startY:p.y,origX:job.x,origY:job.y};
+    canvas.classList.add("dragging");
+  };
+  const move=e=>{
+    if(!labelDragState)return;
+    const p=point(e);
+    job.x=Math.round(Math.max(0,Math.min(job.maxX,labelDragState.origX+(p.x-labelDragState.startX))));
+    job.y=Math.round(Math.max(0,Math.min(job.maxY,labelDragState.origY+(p.y-labelDragState.startY))));
+    renderLabelJob(job);
+    canvas.getContext("2d").drawImage(job.renderCanvas,0,0);
+  };
+  const up=e=>{
+    if(!labelDragState)return;
+    labelDragState=null; canvas.classList.remove("dragging");
+  };
+  if(!canvas.dataset.dragReady){
+    canvas.dataset.dragReady="1";
+    canvas.addEventListener("pointerdown",down);
+    canvas.addEventListener("pointermove",move);
+    canvas.addEventListener("pointerup",up);
+    canvas.addEventListener("pointercancel",up);
+  }
 }
 function closeLabelPreview(){
   const modal=document.getElementById("labelPreviewModal");
@@ -748,7 +838,7 @@ async function printNotaDirect(){
     const job=await buildNotaBitmap();
     pendingLabelPrint=job;
     closePrintChoiceModal();
-    openLabelPreview(job.previewUrl);
+    openLabelPreview(job);
     const previewModal=document.getElementById("labelPreviewModal");
     if(!previewModal || !previewModal.classList.contains("show")){
       console.error("Preview modal gagal dibuka: elemen labelPreviewModal tidak tersedia.");
