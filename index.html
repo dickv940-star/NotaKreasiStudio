@@ -47,6 +47,11 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 #printerStatus.error{color:#b00000}
 button{background:#c40000;color:white;border:0;padding:8px 12px;margin:5px;cursor:pointer;font-weight:bold;border-radius:4px}
 button:hover{filter:brightness(.92)}
+.print-menu{display:inline-block;position:relative}
+.print-options{display:none;position:absolute;left:50%;top:calc(100% + 4px);transform:translateX(-50%);background:#fff;border:1px solid #ccc;border-radius:8px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:10001;min-width:190px}
+.print-options.show{display:flex;flex-direction:column}
+.print-options button{display:block;width:100%;margin:3px 0;text-align:left}
+@media(max-width:700px){.print-options{left:0;transform:none}}
 #btnHistory{background:#333}.history-rename{background:#e09b00}.history-count{font-size:12px;background:#eee;color:#555;padding:3px 8px;border-radius:20px;margin-left:6px}
 #toolbarEdit{display:none;text-align:center;margin:10px}
 #historyModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;padding:30px 15px;overflow:auto}
@@ -138,7 +143,13 @@ button:hover{filter:brightness(.92)}
 </div>
 
 <div class="buttons">
-  <button onclick="window.print()">Cetak Nota</button>
+  <div class="print-menu">
+    <button id="btnCetakNota" type="button">🖨 Cetak Nota</button>
+    <div id="printOptions" class="print-options" aria-hidden="true">
+      <button id="btnPrintLabel" type="button">🏷️ Printer Label</button>
+      <button id="btnPrintEpson" type="button">🖨️ Printer Epson</button>
+    </div>
+  </div>
   <button onclick="downloadJPG()">Download JPG</button>
   <button onclick="resetNota()">Reset</button>
   <button onclick="toggleLunas()">LUNAS</button>
@@ -699,6 +710,26 @@ if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
   tr.querySelectorAll(".qty,.harga").forEach(el=>{el.addEventListener("input",hitung);el.addEventListener("keyup",hitung);el.addEventListener("paste",()=>setTimeout(hitung,0));});tr.querySelector(".edit").focus();hitung();scheduleHistorySave();
 });
 
+const btnCetakNota=document.getElementById("btnCetakNota");
+const printOptions=document.getElementById("printOptions");
+btnCetakNota?.addEventListener("click",()=>{
+  const open=printOptions?.classList.toggle("show");
+  printOptions?.setAttribute("aria-hidden",open?"false":"true");
+});
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".print-menu")){
+    printOptions?.classList.remove("show");
+    printOptions?.setAttribute("aria-hidden","true");
+  }
+});
+document.getElementById("btnPrintLabel")?.addEventListener("click",async()=>{
+  printOptions?.classList.remove("show");
+  await printNotaDirect();
+});
+document.getElementById("btnPrintEpson")?.addEventListener("click",()=>{
+  printOptions?.classList.remove("show");
+  window.print();
+});
 document.getElementById("btnConnectPrinter")?.addEventListener("click",connectPrinterNota);
 document.getElementById("btnPrintDirect")?.addEventListener("click",printNotaDirect);
 hitung();
