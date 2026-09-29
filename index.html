@@ -99,6 +99,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
+<!-- NOTA_PRINT_UI_V2 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -175,11 +176,7 @@ button:hover{filter:brightness(.92)}
   <button onclick="installApp()">Install App</button>
   <button onclick="toggleEdit()">Edit Teks</button>
   <button id="btnHistory" onclick="openHistory()">📋 Histori</button>
-  <div class="printer-tools">
-    <button id="btnConnectPrinter" type="button">🔵 Hubungkan Printer</button>
-    <button id="btnPrintDirect" type="button">🖨 Cetak Printer</button>
-    <span id="printerStatus">Printer belum terhubung</span>
-  </div>
+  
 
   <div id="toolbarEdit">
     <button id="btnBoldCell" onclick="toggleBoldCell()"><b>B</b></button>
@@ -214,8 +211,8 @@ button:hover{filter:brightness(.92)}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="js/bluetooth.js?v=6.3.1"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-2"></script>
+<script src="js/bluetooth.js?v=20260929-2"></script>
 <script>
 const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
@@ -585,8 +582,6 @@ async function printNotaDirect(){
     const ok=await connectPrinterNota();
     if(!ok)return;
   }
-  const btn=document.getElementById("btnPrintDirect");
-  if(btn)btn.disabled=true;
   setPrinterStatus("Menyiapkan nota...","");
   try{
     const bitmap=await buildNotaBitmap();
@@ -601,7 +596,6 @@ async function printNotaDirect(){
     setPrinterStatus("Cetak gagal","error");
     alert("Cetak langsung gagal: "+(e.message||e));
   }finally{
-    if(btn)btn.disabled=false;
   }
 }
 
@@ -756,8 +750,6 @@ document.getElementById("btnPrintEpson")?.addEventListener("click",()=>{
   printOptions?.classList.remove("show");
   window.print();
 });
-document.getElementById("btnConnectPrinter")?.addEventListener("click",connectPrinterNota);
-document.getElementById("btnPrintDirect")?.addEventListener("click",printNotaDirect);
 hitung();
 window.addEventListener("smartprint-bluetooth-connected",e=>{
   const d=e.detail||{};
