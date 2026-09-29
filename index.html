@@ -85,7 +85,7 @@ button:hover{filter:brightness(.92)}
   <table>
     <thead><tr><th>KETERANGAN</th><th>BANYAK</th><th>HARGA</th><th>JUMLAH</th></tr></thead>
     <tbody id="bodyNota">
-      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
+      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="edit jumlah" contenteditable="true"></td></tr>
       <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
       <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
       <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
@@ -203,7 +203,7 @@ function snapshotNota(){
     selector:el.id?("#"+el.id):null,
     html:el.innerHTML
   }));
-  const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll(".edit")].map(el=>el.innerHTML));
+  const rows=[...document.querySelectorAll("#bodyNota tr")].map(row=>[...row.querySelectorAll("td[contenteditable=\"true\"]")].map(el=>el.innerHTML));
   return {
     id:editingHistoryId || Date.now().toString(),
     nama:"",
@@ -295,7 +295,7 @@ function loadHistory(index){
   tbody.innerHTML="";
   (item.rows||[]).forEach(rowData=>{
     const tr=document.createElement("tr");
-    tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td>';
+    tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="edit jumlah" contenteditable="true"></td>';
     tr.querySelectorAll(".edit").forEach((el,i)=>el.innerHTML=rowData[i]||"");
     tbody.appendChild(tr);
   });
