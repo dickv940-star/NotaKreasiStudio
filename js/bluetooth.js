@@ -1,6 +1,6 @@
 /*
 =========================================================
- SmartPrint Bluetooth Engine v6.3.1
+ SmartPrint Bluetooth Engine v6.3.3
  Universal BLE Thermal Printer Transport
 =========================================================
 
@@ -2122,8 +2122,29 @@
             const writer = serialPort.writable.getWriter();
             serialWriter = writer;
 
+            /*
+             * Printer thermal Bluetooth/COM sering mempunyai buffer
+             * kecil. Jangan kirim bitmap 120 KB sekaligus.
+             * Pecah menjadi paket kecil agar seluruh raster diterima.
+             */
+            const CHUNK_SIZE = 512;
+            const CHUNK_DELAY = 8;
+
             try {
-                await writer.write(bytes);
+                for (let offset = 0; offset < bytes.length; offset += CHUNK_SIZE) {
+                    const end = Math.min(offset + CHUNK_SIZE, bytes.length);
+                    await writer.write(bytes.slice(offset, end));
+
+                    if (end < bytes.length) {
+                        await sleep(CHUNK_DELAY);
+                    }
+                }
+
+                /*
+                 * Beri waktu printer memproses akhir bitmap sebelum
+                 * perintah PRINT berikutnya selesai dikirim.
+                 */
+                await sleep(80);
             } finally {
                 try { writer.releaseLock(); } catch (e) {}
                 if (serialWriter === writer) serialWriter = null;
