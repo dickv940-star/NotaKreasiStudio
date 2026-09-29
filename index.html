@@ -121,7 +121,7 @@ button:hover{filter:brightness(.92)}
   .label-preview-modal.show{display:flex}
   .label-preview-card{width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:20px;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,.35)}
   .label-preview-card h3{margin:0 0 6px;font-size:22px}.label-preview-card p{margin:0 0 14px;color:#666;font-size:13px}
-  #labelPreviewImage{display:block;width:min(360px,90vw);height:auto;max-height:65vh;object-fit:contain;margin:0 auto 16px;border:1px solid #ddd;background:#fff}
+  #labelPreviewCanvas{display:block;width:min(360px,90vw);height:auto;max-height:65vh;object-fit:contain;margin:0 auto 16px;border:1px solid #ddd;background:#fff}
   .label-preview-actions{display:flex;gap:10px;justify-content:center}.label-preview-actions button{min-width:130px;margin:0;padding:11px 16px}
   .label-preview-cancel{background:#666!important}
   @media(max-width:520px){.label-preview-card{padding:15px}.label-preview-actions{flex-direction:column}.label-preview-actions button{width:100%}}
@@ -129,7 +129,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V11_LABEL_PREVIEW_FIX_20260929_6 -->
+  <!-- NOTA_PRINT_UI_V12_COM3_CANVAS_PREVIEW_20260929_7 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -630,16 +630,23 @@ async function buildNotaBitmap(){
 
 let pendingLabelPrint=null;
 function openLabelPreview(previewUrl){
-  const modal=document.getElementById("labelPreviewModal"), img=document.getElementById("labelPreviewImage");
-  if(!modal||!img)return;
+  const modal=document.getElementById("labelPreviewModal"), canvas=document.getElementById("labelPreviewCanvas");
+  if(!modal||!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const img=new Image();
+  img.onload=()=>{
+    canvas.width=799;canvas.height=1199;
+    ctx.imageSmoothingEnabled=false;
+    ctx.clearRect(0,0,799,1199);
+    ctx.drawImage(img,0,0,799,1199);
+  };
   img.src=previewUrl;
   modal.classList.add("show");
   modal.setAttribute("aria-hidden","false");
 }
 function closeLabelPreview(){
-  const modal=document.getElementById("labelPreviewModal"), img=document.getElementById("labelPreviewImage");
+  const modal=document.getElementById("labelPreviewModal");
   if(modal){modal.classList.remove("show");modal.setAttribute("aria-hidden","true")}
-  if(img)img.removeAttribute("src");
   pendingLabelPrint=null;
 }
 async function sendPendingLabelPrint(){
@@ -660,7 +667,12 @@ async function sendPendingLabelPrint(){
 async function printNotaDirect(){
   saveCurrentToHistory();
   if(!printerConnected()){
-    const ok=await connectPrinterNota();
+    let ok=false;
+    if(window.Bluetooth && typeof Bluetooth.connectSerial==="function"){
+      setPrinterStatus("Pilih port COM printer (misalnya COM3)...","");
+      ok=await Bluetooth.connectSerial({baudRate:9600});
+    }
+    if(!ok && window.Bluetooth) ok=await connectPrinterNota();
     if(!ok){setPrinterStatus("Printer belum terhubung","error");return;}
   }
   setPrinterStatus("Menyiapkan preview...","");
@@ -868,7 +880,7 @@ if("serviceWorker" in navigator){
     <div class="label-preview-card" role="dialog" aria-modal="true" aria-labelledby="labelPreviewTitle">
       <h3 id="labelPreviewTitle">Preview Nota</h3>
       <p id="labelPreviewStatus">Printer tersambung. Periksa nota sebelum mencetak.</p>
-      <img id="labelPreviewImage" alt="Preview nota sebelum dicetak">
+      <canvas id="labelPreviewCanvas" width="799" height="1199" aria-label="Canvas preview nota sebelum dicetak"></canvas>
       <div class="label-preview-actions">
         <button id="btnConfirmLabelPrint" type="button">🖨️ Print</button>
         <button id="btnCancelLabelPrint" class="label-preview-cancel" type="button">Batal</button>
