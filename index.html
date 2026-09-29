@@ -129,7 +129,7 @@ button:hover{filter:brightness(.92)}
 </head>
 
 <body>
-  <!-- NOTA_PRINT_UI_V15_PREVIEW_AFTER_SERIAL_20260929_10 -->
+  <!-- NOTA_PRINT_FIX_V16_TSPL_BITMAP_20260929_11 -->
 <div class="container">
 <div id="notaArea">
   <div class="header">
@@ -255,8 +255,8 @@ button:hover{filter:brightness(.92)}
     </div>
   </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-6"></script>
-<script src="js/bluetooth.js?v=20260929-6"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260929-8"></script>
+<script src="js/bluetooth.js?v=20260929-8"></script>
 <script>
 const notaArea = document.getElementById("notaArea");
 const tanggal = document.getElementById("tanggal");
@@ -669,8 +669,8 @@ async function sendPendingLabelPrint(){
   closeLabelPreview();
   try{
     setPrinterStatus("Mengirim ke printer...","");
-    const header=asciiBytes("SIZE 100 mm,150 mm\\r\\nGAP 2 mm,0 mm\\r\\nCLS\\r\\nBITMAP 0,0,799,1199,0,");
-    const footer=asciiBytes("\\r\\nPRINT 1,1\\r\\n");
+    const header=asciiBytes("SIZE 100 mm,150 mm\r\nGAP 2 mm,0 mm\r\nCLS\r\nBITMAP 0,0,100,1199,0,");
+    const footer=asciiBytes("\r\nPRINT 1,1\r\n");
     const raw=joinBytes(header,job.bitmap,footer);
     await Bluetooth.sendRaw(raw);
     setPrinterStatus("Terkirim ke printer","connected");
