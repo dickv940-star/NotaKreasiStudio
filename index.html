@@ -27,6 +27,8 @@ table{width:100%;border-collapse:collapse;margin-top:15px;table-layout:fixed}
 #bodyNota tr:first-child .col-resizer{display:none}
 th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 .edit{outline:none}.edit:focus{background:#fff2b8}
+.edit[contenteditable="true"]{font-weight:normal}
+.edit[contenteditable="true"].bold-cell{font-weight:700}
 .footer{display:flex}.warning{width:60%;padding:12px}.warning h2{color:red}.warning h3{font-size:13px;font-weight:normal;margin-top:20px}
 .payment{width:40%;position:relative}
 #lunasBox{display:none;position:absolute;top:42%;left:52%;transform:translate(-50%,-50%) rotate(-12deg);z-index:9999;pointer-events:none}
@@ -134,7 +136,7 @@ button:hover{filter:brightness(.92)}
   <button id="btnHistory" onclick="openHistory()">📋 Histori</button>
 
   <div id="toolbarEdit">
-    <button onclick="cmd('bold')"><b>B</b></button>
+    <button id="btnBoldCell" onclick="toggleBoldCell()"><b>B</b></button>
     <button onclick="cmd('italic')"><i>I</i></button>
     <button onclick="cmd('justifyLeft')">⬅</button>
     <button onclick="cmd('justifyCenter')">⬤</button>
@@ -450,6 +452,15 @@ nota?.addEventListener("blur",()=>{
   saveCurrentToHistory();
 });
 function cmd(command){document.execCommand(command,false,null)}
+function toggleBoldCell(){
+  const sel=window.getSelection();
+  let el=sel&&sel.anchorNode?sel.anchorNode.parentElement:null;
+  if(el && !el.closest("[contenteditable='true']"))el=null;
+  const active=el?el.closest("[contenteditable='true']"):document.activeElement;
+  if(!active || !active.matches("[contenteditable='true']")){alert("Pilih atau klik tulisan di kolom yang ingin dibuat Bold.");return}
+  active.classList.toggle("bold-cell");
+  saveCurrentToHistory();
+}
 const btnTambahBaris=document.getElementById("btnTambahBaris");
 if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
   const tr=document.createElement("tr");
