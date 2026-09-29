@@ -265,8 +265,11 @@ loadColumnWidths();
 setupColumnResize();
 pasangHitungOtomatis();
 
+function isAngkaEditable(el){
+  return !!el && (el.classList.contains("qty") || el.classList.contains("harga") || el.id==="dp");
+}
 function formatAngkaSaatKetik(el){
-  if(!el || !(el.classList.contains("qty") || el.classList.contains("harga") || el.id==="dp")) return;
+  if(!isAngkaEditable(el)) return;
   const oldText=el.textContent||"";
   const sel=window.getSelection();
   let caretDigits=0;
@@ -277,7 +280,7 @@ function formatAngkaSaatKetik(el){
     caretDigits=(range.toString().match(/[0-9]/g)||[]).length;
   }
   const digits=oldText.replace(/[^0-9]/g,"");
-  const formatted=digits?new Intl.NumberFormat("id-ID").format(Number(digits)):"";
+  const formatted=digits ? Number(digits).toLocaleString("id-ID") : "";
   if(oldText===formatted) return;
   el.textContent=formatted;
   if(document.activeElement===el && formatted){
@@ -296,13 +299,19 @@ function formatAngkaSaatKetik(el){
     }
   }
 }
-document.addEventListener("blur", function(e){
-  if(e.target.classList.contains("qty") || e.target.classList.contains("harga") || e.target.id==="dp"){
-    formatInputAngka(e.target);
-    hitung();
-    saveCurrentToHistory();
-  }
-}, true);
+document.addEventListener("input",function(e){
+  const el=e.target.closest?.(".qty,.harga,#dp");
+  if(!el || !isAngkaEditable(el)) return;
+  formatAngkaSaatKetik(el);
+  hitung();
+  scheduleHistorySave();
+});
+document.addEventListener("blur",function(e){
+  if(!isAngkaEditable(e.target)) return;
+  formatAngkaSaatKetik(e.target);
+  hitung();
+  saveCurrentToHistory();
+},true);
 
 function hitung(){
   let totalNilai=0;
