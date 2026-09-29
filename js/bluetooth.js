@@ -46,6 +46,7 @@
 
     let serialPort = null;
     let serialWriter = null;
+    let serialWriteQueue = Promise.resolve();
 
     let bridgeConnected = false;
     let connecting = false;
@@ -1883,6 +1884,8 @@
                 }
             }
 
+            serialWriteQueue = Promise.resolve();
+
             if (serialPort) {
                 try {
                     if (!serialPort.readable && !serialPort.writable) {
@@ -2109,50 +2112,28 @@
 
     async function sendSerial(data) {
 
-        const bytes =
+        const bytes = normalizeBytes(data);
 
-            normalizeBytes(data);
+        const writeJob = serialWriteQueue.then(async () => {
+            if (!serialPort || !serialPort.writable) {
+                throw new Error("Serial printer belum terhubung.");
+            }
 
+            const writer = serialPort.writable.getWriter();
+            serialWriter = writer;
 
-        if (
+            try {
+                await writer.write(bytes);
+            } finally {
+                try { writer.releaseLock(); } catch (e) {}
+                if (serialWriter === writer) serialWriter = null;
+            }
 
-            !serialPort ||
+            return true;
+        });
 
-            !serialPort.writable
-
-        ) {
-
-            throw new Error(
-
-                "Serial printer belum terhubung."
-
-            );
-
-        }
-
-
-        serialWriter =
-
-            serialPort.writable.getWriter();
-
-
-        try {
-
-            await serialWriter.write(bytes);
-
-        }
-
-        finally {
-
-            serialWriter.releaseLock();
-
-            serialWriter = null;
-
-        }
-
-
-        return true;
-
+        serialWriteQueue = writeJob.catch(() => {});
+        return writeJob;
     }
 
 
@@ -2595,6 +2576,7 @@
 
         try {
 
+            await serialWriteQueue.catch(() => {});
             if (serialWriter) {
 
                 try {
