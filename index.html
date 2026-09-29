@@ -108,7 +108,7 @@ button:hover{filter:brightness(.92)}
     </colgroup>
     <thead><tr><th>KETERANGAN</th><th>BANYAK</th><th>HARGA</th><th>JUMLAH</th></tr></thead>
     <tbody id="bodyNota">
-      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="edit jumlah" contenteditable="true"></td></tr>
+      <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
       <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
       <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
       <tr><td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td></tr>
@@ -281,24 +281,27 @@ document.addEventListener("blur", function(e){
 function hitung(){
   let totalNilai=0;
   document.querySelectorAll("#bodyNota tr").forEach(row=>{
-    const qtyText=(row.querySelector(".qty")?.innerText||"").trim();
-    const hargaText=(row.querySelector(".harga")?.innerText||"").trim();
-    const qty=angka(qtyText);
-    const harga=angka(hargaText);
+    const qtyEl=row.querySelector(".qty");
+    const hargaEl=row.querySelector(".harga");
     const cell=row.querySelector(".jumlah");
-    const validQty=/^[0-9][0-9.]*$/.test(qtyText);
-    const validHarga=/^[0-9][0-9.]*$/.test(hargaText);
-    if(cell && validQty && validHarga && qty>0 && harga>0){
-      cell.innerText=formatAngka(qty*harga);
-      totalNilai+=qty*harga;
-    }else if(cell && !cell.matches(":focus")){
-      cell.innerText="";
+    const qtyText=(qtyEl?.innerText||"").trim();
+    const hargaText=(hargaEl?.innerText||"").trim();
+    const qtyDigits=qtyText.replace(/[^0-9]/g,"");
+    const hargaDigits=hargaText.replace(/[^0-9]/g,"");
+    const qty=qtyDigits?Number(qtyDigits):0;
+    const harga=hargaDigits?Number(hargaDigits):0;
+    if(cell && qty>0 && harga>0){
+      const jumlah=qty*harga;
+      cell.textContent=formatAngka(jumlah);
+      totalNilai+=jumlah;
+    }else if(cell){
+      cell.textContent="";
     }
   });
-  total.innerText=formatAngka(totalNilai);
-  const bayar=angka(dp.innerText);
-  if(!dp.innerText.trim()) sisa.innerText="";
-  else sisa.innerText=formatAngka(Math.max(0,totalNilai-bayar));
+  total.textContent=formatAngka(totalNilai);
+  const dpText=(dp.innerText||"").trim();
+  const bayar=dpText?angka(dpText):0;
+  sisa.textContent=dpText?formatAngka(Math.max(0,totalNilai-bayar)):"";
 }
 
 function getHistory(){
@@ -410,7 +413,7 @@ function loadHistory(index){
   tbody.innerHTML="";
   (item.rows||[]).forEach(rowData=>{
     const tr=document.createElement("tr");
-    tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="edit jumlah" contenteditable="true"></td>';
+    tr.innerHTML='<td class="edit" contenteditable="true"></td><td class="edit qty" contenteditable="true"></td><td class="edit harga" contenteditable="true"></td><td class="jumlah"></td>';
     tr.querySelectorAll(".edit").forEach((el,i)=>{const v=rowData[i]; el.innerHTML=typeof v==="object"?(v.html||""):(v||""); if(typeof v==="object"&&v.bold)el.classList.add("bold-cell"); if(typeof v==="object"&&v.style)el.setAttribute("style",v.style);});
     tbody.appendChild(tr);
   });
@@ -678,7 +681,7 @@ if(btnTambahBaris)btnTambahBaris.addEventListener("click",()=>{
 });
 
 document.getElementById("btnConnectPrinter")?.addEventListener("click",connectPrinterNota);
-document.getElementById("btnPrintDirect")?.addEventListener("click",printNotaDirect);
+document.getElementById("btnPrintDirect")?.addEventListener("click",printNotaDirect);\nhitung();
 window.addEventListener("smartprint-bluetooth-connected",e=>{
   const d=e.detail||{};
   setPrinterStatus("Terhubung: "+(d.name||"Printer"),"connected");
