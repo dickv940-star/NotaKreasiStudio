@@ -315,6 +315,7 @@ th,td{overflow-wrap:anywhere;word-break:normal}
   <button onclick="toggleLunas()">LUNAS</button>
   <button onclick="installApp()">Install App</button>
   <button onclick="toggleEdit()">Edit Teks</button>
+  <button id="btnSaveNota" type="button" onclick="saveNotaManual()">💾 Simpan Nota</button>
   <button id="btnHistory" onclick="openHistory()">📋 Histori</button>
   
 
@@ -596,6 +597,23 @@ function formatTanggal(v){
   if(!v)return "Tanggal tidak diisi";
   const d=new Date(v+"T00:00:00");
   return d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+function saveNotaManual(){
+  if(!hasNotaData()){
+    alert("Isi nomor nota, keterangan, harga, atau data nota terlebih dahulu sebelum menyimpan.");
+    return;
+  }
+  try{
+    saveCurrentToHistory();
+    renderHistory();
+    const modal=document.getElementById("historyModal");
+    modal.style.display="block";
+    modal.setAttribute("aria-hidden","false");
+    alert("Nota berhasil disimpan ke Histori.");
+  }catch(err){
+    console.error("Gagal menyimpan nota:",err);
+    alert("Nota belum berhasil disimpan. Periksa apakah penyimpanan browser tersedia.");
+  }
 }
 function openHistory(){
   saveCurrentToHistory();
