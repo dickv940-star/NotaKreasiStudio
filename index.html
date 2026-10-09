@@ -132,6 +132,23 @@ button:hover{filter:brightness(.92)}
   .label-preview-cancel{background:#666!important}
   @media(max-width:520px){.label-preview-card{padding:12px}.label-position-controls{grid-template-columns:1fr 1fr}.label-position-controls button{width:100%}.label-preview-actions{flex-direction:column}.label-preview-actions button{width:100%}}
 
+/* CENTERING FIX: posisikan lembar nota tepat di tengah layar */
+body{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+body > .container{
+  display:block;
+  width:calc(100% - 0px);
+  max-width:900px;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+@media print{
+  body{display:block !important}
+  body > .container{width:100%;max-width:none;margin:0 !important}
+}
 /* RESPONSIVE CENTERING + FORMAT RUPIAH */
 html{width:100%;min-height:100%;-webkit-text-size-adjust:100%}
 body{width:100%;min-width:0;padding:clamp(8px,2.5vw,24px);display:flex;flex-direction:column;align-items:center}
