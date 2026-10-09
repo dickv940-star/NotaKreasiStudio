@@ -638,7 +638,7 @@ function renderHistory(){
   }
   list.innerHTML="";
   items.forEach((item,index)=>{
-    const firstDesc=(item.rows||[]).flat().find(v=>v&&v.replace(/<[^>]*>/g,"").trim());
+    const firstDesc=(item.rows||[]).flat().map(v=>{const h=typeof v==="string"?v:(v?.html||"");const d=document.createElement("div");d.innerHTML=h;return (d.textContent||d.innerText||"").trim()}).find(Boolean)||"";
     const title=item.nama || (item.nomor?("Nota No. "+item.nomor):"Nota tanpa nomor");
     const meta=formatTanggal(item.tanggal)+(firstDesc?" • "+firstDesc.replace(/<[^>]*>/g,"").trim().slice(0,70):"");
     const row=document.createElement("div");
