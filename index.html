@@ -49,7 +49,7 @@ th,td{border:2px solid #000;height:45px}th{font-size:18px}td{padding:5px}
 }
 .edit[contenteditable="true"].bold-cell{font-weight:700}
 #notaArea [contenteditable="true"]::selection{background:#b8d8ff;color:#111}
-#notaArea .bulk-edit-selected{outline:none!important;background:transparent!important}
+#notaArea .bulk-edit-selected{outline:2px dashed #1677c8!important;outline-offset:-3px!important;background:rgba(22,119,200,.08)!important}
 #notaArea.edit-mode [contenteditable="true"]{cursor:text}
 #total,#sisa{cursor:text}
 #total.bold-cell,#dp.bold-cell,#sisa.bold-cell{font-weight:700}
@@ -336,7 +336,7 @@ th,td{overflow-wrap:anywhere;word-break:normal}
     
     <button onclick="applyTextDecoration('underline')" title="Garis bawah"><u>U</u></button>
     <button onclick="applyTextDecoration('line-through')" title="Coret"><s>S</s></button>
-    <button type="button" onclick="selectAllEditables()" title="Blok semua">☷ Blok Semua</button>
+    <button type="button" onclick="selectAllEditables()" title="Pilih semua kolom/baris untuk format massal">☷ Blok Semua Kolom/Baris</button>
     <button onclick="applyTextAlign('left')" title="Rata kiri">⬅</button>
     <button onclick="applyTextAlign('center')" title="Rata tengah">⬤</button>
     <button onclick="applyTextAlign('right')" title="Rata kanan">➡</button>
@@ -1097,6 +1097,7 @@ function rangeIsInsideOneEditable(range){
 }
 function clearEditSelection(){
   savedEditRange=null;
+  bulkEditTargets=[];
   const sel=window.getSelection();
   if(sel) sel.removeAllRanges();
   document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
@@ -1114,7 +1115,9 @@ function restoreEditSelection(){
   const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(savedEditRange); return true;
 }
 function getSelectedEditableBlocks(){ return []; }
+let bulkEditTargets=[];
 function getSelectedEditables(){
+  if(bulkEditTargets.length)return bulkEditTargets.filter(el=>el.isConnected);
   if(savedEditRange){ const host=rangeIsInsideOneEditable(savedEditRange); if(host) return [host]; }
   const active=document.activeElement;
   return active&&active.matches('[contenteditable="true"]')?[active]:[];
@@ -1122,32 +1125,53 @@ function getSelectedEditables(){
 function updateEditSelectionInfo(){ return; }
 function selectAllEditables(){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  const active=editableHost(document.activeElement);
-  if(!active){alert('Klik di dalam teks yang ingin diedit terlebih dahulu.');return}
-  if(!(active.textContent||'').trim()){alert('Belum ada tulisan pada bagian ini.');return}
-  const range=document.createRange(); range.selectNodeContents(active);
-  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); savedEditRange=range.cloneRange();
+  clearEditSelection();
+  bulkEditTargets=[...notaArea.querySelectorAll('[contenteditable="true"]')].filter(el=>!el.closest('#toolbarEdit'));
+  bulkEditTargets.forEach(el=>el.classList.add('bulk-edit-selected'));
+  if(!bulkEditTargets.length){alert('Tidak ada kolom yang bisa diedit.');return}
+  alert('Mode blok semua aktif: '+bulkEditTargets.length+' kolom/baris dipilih. Perintah format berikutnya diterapkan ke semua pilihan. Klik Blok Semua lagi untuk membatalkan pilihan.');
 }
 function applyInline(command,value){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const targets=getSelectedEditables();
+  if(bulkEditTargets.length){
+    try{
+      targets.forEach(el=>{
+        const range=document.createRange();range.selectNodeContents(el);
+        const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+        document.execCommand(command,false,value??null);
+      });
+      clearEditSelection();saveCurrentToHistory();
+    }catch(e){console.error('Format teks massal:',e);alert('Sebagian format mungkin gagal diterapkan.')}
+    return;
+  }
+  if(!restoreEditSelection()){alert('Blok teks terlebih dahulu atau klik Blok Semua Kolom/Baris.');return}
   const sel=window.getSelection();
-  if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Blok teks terlebih dahulu atau klik Blok Semua Kolom/Baris.');return}
   const range=sel.getRangeAt(0);
   if(!rangeIsInsideOneEditable(range)){alert('Seleksi harus berada pada satu bagian teks.');return}
-  try{ document.execCommand(command,false,value??null); savedEditRange=sel.rangeCount?sel.getRangeAt(0).cloneRange():null; saveCurrentToHistory(); }
+  try{document.execCommand(command,false,value??null);savedEditRange=sel.rangeCount?sel.getRangeAt(0).cloneRange():null;saveCurrentToHistory()}
   catch(e){console.error('Format teks:',e)}
 }
 function applyInlineStyle(property,value){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const targets=getSelectedEditables();
+  if(bulkEditTargets.length){
+    targets.forEach(el=>{
+      const span=document.createElement('span');span.style[property]=value;
+      while(el.firstChild)span.appendChild(el.firstChild);
+      if(span.childNodes.length)el.appendChild(span);
+    });
+    clearEditSelection();saveCurrentToHistory();return;
+  }
+  if(!restoreEditSelection()){alert('Blok teks terlebih dahulu atau klik Blok Semua Kolom/Baris.');return}
   const sel=window.getSelection();
-  if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Blok teks terlebih dahulu atau klik Blok Semua Kolom/Baris.');return}
   const range=sel.getRangeAt(0);
   if(!rangeIsInsideOneEditable(range)){alert('Seleksi harus berada pada satu bagian teks.');return}
   const fragment=range.extractContents();
-  const span=document.createElement('span'); span.style[property]=value; span.appendChild(fragment); range.insertNode(span);
-  sel.removeAllRanges(); const next=document.createRange(); next.selectNodeContents(span); sel.addRange(next); savedEditRange=next.cloneRange(); saveCurrentToHistory();
+  const span=document.createElement('span');span.style[property]=value;span.appendChild(fragment);range.insertNode(span);
+  sel.removeAllRanges();const next=document.createRange();next.selectNodeContents(span);sel.addRange(next);savedEditRange=next.cloneRange();saveCurrentToHistory();
 }
 function applyFontFamily(value){applyInline('fontName',value)}
 function applyFontSize(value){applyInlineStyle('fontSize',value)}
@@ -1156,10 +1180,14 @@ function applyTextDecoration(value){ if(value==='underline')applyInline('underli
 function toggleBoldCell(){applyInline('bold')}
 function applyTextAlign(value){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
-  const sel=window.getSelection(), range=sel?.rangeCount?sel.getRangeAt(0):null, host=rangeIsInsideOneEditable(range);
+  if(bulkEditTargets.length){
+    getSelectedEditables().forEach(el=>el.style.textAlign=value);
+    clearEditSelection();saveCurrentToHistory();return;
+  }
+  if(!restoreEditSelection()){alert('Blok teks terlebih dahulu atau klik Blok Semua Kolom/Baris.');return}
+  const sel=window.getSelection(),range=sel?.rangeCount?sel.getRangeAt(0):null,host=rangeIsInsideOneEditable(range);
   if(!host){alert('Seleksi harus berada pada satu bagian teks.');return}
-  host.style.textAlign=value; saveCurrentToHistory();
+  host.style.textAlign=value;saveCurrentToHistory();
 }
 function cmd(command){applyInline(command)}
 function toggleEdit(){
