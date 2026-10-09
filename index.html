@@ -222,6 +222,18 @@ th,td{overflow-wrap:anywhere;word-break:normal}
  .info input{width:145px}
 }
 
+
+/* FORCE ALIGNMENT: apply to the editable cells and any pasted/nested text */
+#notaArea table thead th:nth-child(-n+3),
+#notaArea #bodyNota tr td:nth-child(1),
+#notaArea #bodyNota tr td:nth-child(2),
+#notaArea #bodyNota tr td:nth-child(3),
+#notaArea #bodyNota tr td:nth-child(1) *,
+#notaArea #bodyNota tr td:nth-child(2) *,
+#notaArea #bodyNota tr td:nth-child(3) * {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
 </style>
 </head>
 
@@ -1194,6 +1206,24 @@ document.addEventListener("focusout",function(e){
   el.textContent=digits?digits.replace(/\B(?=(\d{3})+(?!\d))/g,"."):"";
   hitung();
   if(typeof scheduleHistorySave==="function")scheduleHistorySave();
+});
+
+/* Keep Keterangan, Banyak, and Harga centered even after editing/pasting text. */
+function forceCenterNotaColumns(){
+  document.querySelectorAll("#notaArea #bodyNota tr td:nth-child(-n+3)").forEach(td=>{
+    td.style.setProperty("text-align","center","important");
+    td.style.setProperty("vertical-align","middle","important");
+    td.querySelectorAll("*").forEach(child=>{
+      child.style.setProperty("text-align","center","important");
+    });
+  });
+}
+forceCenterNotaColumns();
+document.addEventListener("input",function(e){
+  if(e.target?.closest?.("#notaArea #bodyNota tr td:nth-child(-n+3)")) forceCenterNotaColumns();
+});
+document.addEventListener("paste",function(e){
+  if(e.target?.closest?.("#notaArea #bodyNota tr td:nth-child(-n+3)")) setTimeout(forceCenterNotaColumns,0);
 });
 
 hitung();
