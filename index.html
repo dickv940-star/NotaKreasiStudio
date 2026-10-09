@@ -1085,83 +1085,81 @@ function installApp(){
 }
 let editMode=false;
 let savedEditRange=null;
-let bulkEditTargets=[];
+
 function editableHost(node){
- const el=node?.nodeType===3?node.parentElement:node;
- return el?.closest?.('#notaArea [contenteditable="true"]')||null;
+  const el=node?.nodeType===3 ? node.parentElement : node;
+  return el?.closest?.('#notaArea [contenteditable="true"]') || null;
 }
 function rangeIsInsideOneEditable(range){
- if(!range)return null;
- const a=editableHost(range.startContainer),b=editableHost(range.endContainer);
- return a&&a===b?a:null;
+  if(!range) return null;
+  const a=editableHost(range.startContainer), b=editableHost(range.endContainer);
+  return a && a===b ? a : null;
 }
 function clearEditSelection(){
- savedEditRange=null;bulkEditTargets=[];
- document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
- const sel=window.getSelection();if(sel)sel.removeAllRanges();
+  savedEditRange=null;
+  const sel=window.getSelection();
+  if(sel) sel.removeAllRanges();
+  document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
 }
 function rememberEditSelection(){
- if(!editMode||bulkEditTargets.length)return;
- const sel=window.getSelection();if(!sel||!sel.rangeCount)return;
- const r=sel.getRangeAt(0);if(rangeIsInsideOneEditable(r))savedEditRange=r.cloneRange();
+  if(!editMode) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount) return;
+  const range=sel.getRangeAt(0);
+  if(rangeIsInsideOneEditable(range)) savedEditRange=range.cloneRange();
 }
 document.addEventListener('selectionchange',rememberEditSelection);
 function restoreEditSelection(){
- if(!savedEditRange||!rangeIsInsideOneEditable(savedEditRange))return false;
- const s=window.getSelection();s.removeAllRanges();s.addRange(savedEditRange);return true;
+  if(!savedEditRange || !rangeIsInsideOneEditable(savedEditRange)) return false;
+  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(savedEditRange); return true;
 }
-function getSelectedEditableBlocks(){return bulkEditTargets.slice()}
+function getSelectedEditableBlocks(){ return []; }
 function getSelectedEditables(){
- if(bulkEditTargets.length)return bulkEditTargets.slice();
- if(savedEditRange){const h=rangeIsInsideOneEditable(savedEditRange);if(h)return[h]}
- const h=editableHost(document.activeElement);return h?[h]:[];
+  if(savedEditRange){ const host=rangeIsInsideOneEditable(savedEditRange); if(host) return [host]; }
+  const active=document.activeElement;
+  return active&&active.matches('[contenteditable="true"]')?[active]:[];
 }
-function updateEditSelectionInfo(){return}
+function updateEditSelectionInfo(){ return; }
 function selectAllEditables(){
- if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
- if(bulkEditTargets.length){clearEditSelection();return}
- bulkEditTargets=Array.from(document.querySelectorAll('#notaArea [contenteditable="true"]'));
- bulkEditTargets.forEach(el=>el.classList.add('bulk-edit-selected'));
- alert('Blok semua aktif: '+bulkEditTargets.length+' bagian dipilih. Pilih tombol format untuk menerapkan ke semuanya. Klik tombol ini lagi untuk batal.');
+  if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+  const active=editableHost(document.activeElement);
+  if(!active){alert('Klik di dalam teks yang ingin diedit terlebih dahulu.');return}
+  if(!(active.textContent||'').trim()){alert('Belum ada tulisan pada bagian ini.');return}
+  const range=document.createRange(); range.selectNodeContents(active);
+  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); savedEditRange=range.cloneRange();
 }
 function applyInline(command,value){
- if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
- if(bulkEditTargets.length){
-  let count=0;
-  bulkEditTargets.forEach(el=>{try{
-   const r=document.createRange();r.selectNodeContents(el);
-   const s=window.getSelection();s.removeAllRanges();s.addRange(r);
-   el.focus();document.execCommand(command,false,value??null);count++;
-  }catch(e){console.error(e)}});
-  window.getSelection()?.removeAllRanges();saveCurrentToHistory();
-  alert('Format diterapkan pada '+count+' bagian.');return;
- }
- if(!restoreEditSelection()){alert('Klik teks atau blok karakter yang ingin diedit terlebih dahulu.');return}
- const s=window.getSelection();
- if(!s||!s.rangeCount||s.isCollapsed){alert('Blok karakter yang ingin diedit terlebih dahulu.');return}
- if(!rangeIsInsideOneEditable(s.getRangeAt(0))){alert('Seleksi harus berada pada satu bagian teks.');return}
- try{document.execCommand(command,false,value??null);savedEditRange=s.rangeCount?s.getRangeAt(0).cloneRange():null;saveCurrentToHistory()}catch(e){console.error(e)}
+  if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const range=sel.getRangeAt(0);
+  if(!rangeIsInsideOneEditable(range)){alert('Seleksi harus berada pada satu bagian teks.');return}
+  try{ document.execCommand(command,false,value??null); savedEditRange=sel.rangeCount?sel.getRangeAt(0).cloneRange():null; saveCurrentToHistory(); }
+  catch(e){console.error('Format teks:',e)}
 }
 function applyInlineStyle(property,value){
- if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
- if(bulkEditTargets.length){bulkEditTargets.forEach(el=>{el.style[property]=value});saveCurrentToHistory();return}
- if(!restoreEditSelection()){alert('Klik atau blok teks terlebih dahulu.');return}
- const s=window.getSelection();if(!s||!s.rangeCount||s.isCollapsed){alert('Blok teks terlebih dahulu.');return}
- const r=s.getRangeAt(0);if(!rangeIsInsideOneEditable(r)){alert('Seleksi harus berada pada satu bagian teks.');return}
- const frag=r.extractContents(),span=document.createElement('span');span.style[property]=value;span.appendChild(frag);r.insertNode(span);
- s.removeAllRanges();const next=document.createRange();next.selectNodeContents(span);s.addRange(next);savedEditRange=next.cloneRange();saveCurrentToHistory();
+  if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const range=sel.getRangeAt(0);
+  if(!rangeIsInsideOneEditable(range)){alert('Seleksi harus berada pada satu bagian teks.');return}
+  const fragment=range.extractContents();
+  const span=document.createElement('span'); span.style[property]=value; span.appendChild(fragment); range.insertNode(span);
+  sel.removeAllRanges(); const next=document.createRange(); next.selectNodeContents(span); sel.addRange(next); savedEditRange=next.cloneRange(); saveCurrentToHistory();
 }
 function applyFontFamily(value){applyInline('fontName',value)}
 function applyFontSize(value){applyInlineStyle('fontSize',value)}
-function applyFontColor(value){applyInlineStyle('color',value)}
-function applyTextDecoration(value){if(value==='underline')applyInline('underline');else if(value==='line-through')applyInline('strikeThrough')}
+function applyFontColor(value){applyInline('foreColor',value)}
+function applyTextDecoration(value){ if(value==='underline')applyInline('underline'); else if(value==='line-through')applyInline('strikeThrough'); }
 function toggleBoldCell(){applyInline('bold')}
 function applyTextAlign(value){
- if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
- if(bulkEditTargets.length){bulkEditTargets.forEach(el=>el.style.textAlign=value);saveCurrentToHistory();return}
- if(!restoreEditSelection()){alert('Klik teks atau blok karakter terlebih dahulu.');return}
- const s=window.getSelection(),r=s?.rangeCount?s.getRangeAt(0):null,h=rangeIsInsideOneEditable(r);
- if(!h){alert('Seleksi harus berada pada satu bagian teks.');return}h.style.textAlign=value;saveCurrentToHistory();
+  if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
+  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const sel=window.getSelection(), range=sel?.rangeCount?sel.getRangeAt(0):null, host=rangeIsInsideOneEditable(range);
+  if(!host){alert('Seleksi harus berada pada satu bagian teks.');return}
+  host.style.textAlign=value; saveCurrentToHistory();
 }
 function cmd(command){applyInline(command)}
 function toggleEdit(){
