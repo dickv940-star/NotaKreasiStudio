@@ -418,9 +418,34 @@ function digitsOnly(value){
 }
 function formatAngkaSaatKetik(el){
   if(!isAngkaEditable(el)) return;
+  const selection=window.getSelection();
+  let digitCaret=null;
+  if(selection && selection.rangeCount && el.contains(selection.anchorNode)){
+    try{
+      const range=selection.getRangeAt(0).cloneRange();
+      range.selectNodeContents(el);
+      range.setEnd(selection.anchorNode,selection.anchorOffset);
+      digitCaret=digitsOnly(range.toString()).length;
+    }catch(err){}
+  }
   const digits=digitsOnly(el.textContent);
   const formatted=digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g,".") : "";
   if(el.textContent!==formatted) el.textContent=formatted;
+  if(digitCaret!==null && selection && document.activeElement===el){
+    const node=el.firstChild;
+    if(node){
+      let offset=0, seen=0;
+      while(offset<node.textContent.length && seen<digitCaret){
+        if(/[0-9]/.test(node.textContent[offset])) seen++;
+        offset++;
+      }
+      const range=document.createRange();
+      range.setStart(node,offset);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
 }
 function hitung(){
   let totalNilai=0;
