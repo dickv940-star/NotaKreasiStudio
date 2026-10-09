@@ -131,6 +131,65 @@ button:hover{filter:brightness(.92)}
   .label-preview-actions{display:flex;gap:10px;justify-content:center}.label-preview-actions button{min-width:130px;margin:0;padding:11px 16px}
   .label-preview-cancel{background:#666!important}
   @media(max-width:520px){.label-preview-card{padding:12px}.label-position-controls{grid-template-columns:1fr 1fr}.label-position-controls button{width:100%}.label-preview-actions{flex-direction:column}.label-preview-actions button{width:100%}}
+
+/* RESPONSIVE CENTERING + FORMAT RUPIAH */
+html{width:100%;min-height:100%;-webkit-text-size-adjust:100%}
+body{width:100%;min-width:0;padding:clamp(8px,2.5vw,24px);display:flex;flex-direction:column;align-items:center}
+.container{width:100%;max-width:900px;margin:clamp(8px,2vw,24px) auto;padding:clamp(10px,3.5vw,40px);min-width:0}
+#notaArea{width:100%;max-width:100%;margin-inline:auto}
+.header{width:100%;align-items:flex-start}
+.logo,.info{min-width:0}
+.logo img{max-width:100%;height:auto}
+.logo p{overflow-wrap:anywhere}
+.info p{max-width:100%}
+.info input{max-width:100%;min-width:0}
+table{max-width:100%}
+th,td{overflow-wrap:anywhere;word-break:normal}
+.footer{width:100%;align-items:stretch;gap:8px}
+.warning,.payment{min-width:0}
+.payment table{table-layout:fixed}
+#total,#dp,#sisa,.harga,.jumlah{font-variant-numeric:tabular-nums}
+.buttons{width:100%;max-width:900px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px}
+.buttons button{max-width:100%}
+#toolbarEdit{width:100%;max-width:900px;flex-wrap:wrap;justify-content:center}
+@media(max-width:600px){
+ body{padding:6px}
+ .container{margin:6px auto;padding:8px}
+ #notaArea{padding:2px}
+ .header{justify-content:center;align-items:center;flex-wrap:wrap;text-align:center;gap:12px}
+ .logo{align-items:center;width:100%;text-align:center}
+ .logo img{width:min(180px,70vw);margin-inline:auto}
+ .logo h2{font-size:clamp(15px,4vw,19px)}
+ .logo p{font-size:11px}
+ .info{width:100%;align-items:center;text-align:center;font-size:12px}
+ .info p{width:100%;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:5px}
+ .info input{width:min(180px,55vw)}
+ .info h2{margin:4px 0;font-size:17px}
+ table{margin-top:10px}
+ th{font-size:clamp(10px,2.8vw,13px);padding:3px 1px}
+ th,td{height:38px;border-width:1px}
+ td{font-size:clamp(10px,2.8vw,12px);padding:3px 2px}
+ .footer{flex-direction:column;gap:10px}
+ .warning,.payment{width:100%;padding:6px}
+ .warning h2{font-size:16px}
+ .warning p{font-size:12px;line-height:1.4}
+ .warning h3{font-size:12px;margin-top:10px}
+ .payment table{width:100%}
+ .payment table th,.payment table td{font-size:13px}
+ #lunasText{font-size:clamp(22px,7vw,34px)}
+ .buttons{gap:2px}
+ .buttons button{margin:3px;padding:8px 9px;font-size:12px}
+ #toolbarEdit{display:none;margin:8px auto}
+ .edit-toolbar-control{margin:3px;padding:5px}
+}
+@media(max-width:360px){
+ .container{padding:5px}
+ #notaArea{padding:0}
+ th,td{font-size:9px;padding:2px}
+ .logo p{font-size:10px}
+ .info input{width:145px}
+}
+
 </style>
 </head>
 
@@ -1069,6 +1128,17 @@ document.getElementById("btnPrintEpson")?.addEventListener("click",()=>{
   closePrintChoiceModal();
   window.print();
 });
+
+/* Pastikan nominal selalu memakai pemisah ribuan titik saat selesai diedit. */
+document.addEventListener("focusout",function(e){
+  const el=e.target?.closest?.(".qty,.harga,#dp");
+  if(!el)return;
+  const digits=digitsOnly(el.textContent);
+  el.textContent=digits?digits.replace(/\B(?=(\d{3})+(?!\d))/g,"."):"";
+  hitung();
+  if(typeof scheduleHistorySave==="function")scheduleHistorySave();
+});
+
 hitung();
 window.addEventListener("smartprint-bluetooth-connected",e=>{
   const d=e.detail||{};
