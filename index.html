@@ -132,6 +132,21 @@ button:hover{filter:brightness(.92)}
   .label-preview-cancel{background:#666!important}
   @media(max-width:520px){.label-preview-card{padding:12px}.label-position-controls{grid-template-columns:1fr 1fr}.label-position-controls button{width:100%}.label-preview-actions{flex-direction:column}.label-preview-actions button{width:100%}}
 
+/* Ratakan otomatis isi kolom Keterangan, Banyak, dan Harga ke tengah */
+#notaArea #bodyNota td:nth-child(1),
+#notaArea #bodyNota td.qty,
+#notaArea #bodyNota td.harga,
+#notaArea table thead th:nth-child(1),
+#notaArea table thead th:nth-child(2),
+#notaArea table thead th:nth-child(3){
+  text-align:center !important;
+  vertical-align:middle !important;
+}
+#notaArea #bodyNota td:nth-child(1)[contenteditable="true"],
+#notaArea #bodyNota td.qty[contenteditable="true"],
+#notaArea #bodyNota td.harga[contenteditable="true"]{
+  text-align:center !important;
+}
 /* CENTERING FIX: posisikan lembar nota tepat di tengah layar */
 body{
   display:flex;
