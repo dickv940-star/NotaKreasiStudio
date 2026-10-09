@@ -1085,7 +1085,7 @@ function installApp(){
 }
 let editMode=false;
 let savedEditRange=null;
-
+let bulkEditTargets=[];
 function editableHost(node){
   const el=node?.nodeType===3 ? node.parentElement : node;
   return el?.closest?.('#notaArea [contenteditable="true"]') || null;
@@ -1097,12 +1097,13 @@ function rangeIsInsideOneEditable(range){
 }
 function clearEditSelection(){
   savedEditRange=null;
+  bulkEditTargets=[];
   const sel=window.getSelection();
   if(sel) sel.removeAllRanges();
   document.querySelectorAll('#notaArea .bulk-edit-selected').forEach(el=>el.classList.remove('bulk-edit-selected'));
 }
 function rememberEditSelection(){
-  if(!editMode) return;
+  if(!editMode || bulkEditTargets.length) return;
   const sel=window.getSelection();
   if(!sel || !sel.rangeCount) return;
   const range=sel.getRangeAt(0);
@@ -1113,24 +1114,43 @@ function restoreEditSelection(){
   if(!savedEditRange || !rangeIsInsideOneEditable(savedEditRange)) return false;
   const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(savedEditRange); return true;
 }
-function getSelectedEditableBlocks(){ return []; }
+function getSelectedEditableBlocks(){ return bulkEditTargets.slice(); }
 function getSelectedEditables(){
+  if(bulkEditTargets.length) return bulkEditTargets.slice();
   if(savedEditRange){ const host=rangeIsInsideOneEditable(savedEditRange); if(host) return [host]; }
-  const active=document.activeElement;
-  return active&&active.matches('[contenteditable="true"]')?[active]:[];
+  const active=editableHost(document.activeElement);
+  return active?[active]:[];
 }
 function updateEditSelectionInfo(){ return; }
 function selectAllEditables(){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  const active=editableHost(document.activeElement);
-  if(!active){alert('Klik di dalam teks yang ingin diedit terlebih dahulu.');return}
-  if(!(active.textContent||'').trim()){alert('Belum ada tulisan pada bagian ini.');return}
-  const range=document.createRange(); range.selectNodeContents(active);
-  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); savedEditRange=range.cloneRange();
+  clearEditSelection();
+  bulkEditTargets=Array.from(document.querySelectorAll('#notaArea [contenteditable="true"]'));
+  if(!bulkEditTargets.length){alert('Tidak ditemukan kolom/baris yang bisa diedit.');return}
+  bulkEditTargets.forEach(el=>el.classList.add('bulk-edit-selected'));
+  alert('Mode blok massal aktif: '+bulkEditTargets.length+' bagian teks dipilih, termasuk kolom dan baris. Pilih tombol format untuk menerapkannya. Klik Blok Semua Kolom/Baris lagi untuk membatalkan pilihan.');
 }
 function applyInline(command,value){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  const targets=getSelectedEditables();
+  if(bulkEditTargets.length){
+    let applied=0;
+    targets.forEach(el=>{
+      if(!el.isConnected)return;
+      try{
+        el.focus();
+        const range=document.createRange(); range.selectNodeContents(el);
+        const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        document.execCommand(command,false,value??null);
+        applied++;
+      }catch(e){console.error('Format massal:',e)}
+    });
+    window.getSelection()?.removeAllRanges();
+    saveCurrentToHistory();
+    alert('Format diterapkan ke '+applied+' bagian.');
+    return;
+  }
+  if(!restoreEditSelection()){alert('Klik/drag teks yang ingin diedit terlebih dahulu.');return}
   const sel=window.getSelection();
   if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
   const range=sel.getRangeAt(0);
@@ -1140,7 +1160,12 @@ function applyInline(command,value){
 }
 function applyInlineStyle(property,value){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  if(bulkEditTargets.length){
+    bulkEditTargets.forEach(el=>{if(el.isConnected)el.style[property]=value});
+    saveCurrentToHistory();
+    return;
+  }
+  if(!restoreEditSelection()){alert('Klik/drag teks yang ingin diedit terlebih dahulu.');return}
   const sel=window.getSelection();
   if(!sel || !sel.rangeCount || sel.isCollapsed){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
   const range=sel.getRangeAt(0);
@@ -1156,7 +1181,12 @@ function applyTextDecoration(value){ if(value==='underline')applyInline('underli
 function toggleBoldCell(){applyInline('bold')}
 function applyTextAlign(value){
   if(!editMode){alert('Klik Edit Teks terlebih dahulu.');return}
-  if(!restoreEditSelection()){alert('Drag/blok karakter yang ingin diedit terlebih dahulu.');return}
+  if(bulkEditTargets.length){
+    bulkEditTargets.forEach(el=>{if(el.isConnected)el.style.textAlign=value});
+    saveCurrentToHistory();
+    return;
+  }
+  if(!restoreEditSelection()){alert('Klik/drag teks yang ingin diedit terlebih dahulu.');return}
   const sel=window.getSelection(), range=sel?.rangeCount?sel.getRangeAt(0):null, host=rangeIsInsideOneEditable(range);
   if(!host){alert('Seleksi harus berada pada satu bagian teks.');return}
   host.style.textAlign=value; saveCurrentToHistory();
